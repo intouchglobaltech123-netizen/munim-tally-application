@@ -1,0 +1,10 @@
+{
+  "name": "@munim/shared",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "dependencies": {
+    "@types/node": "^26.4.0",
+    "typescript": "^7.0.2",
+    "zod": "latest"
+  }
+}

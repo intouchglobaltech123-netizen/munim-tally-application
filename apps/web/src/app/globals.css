@@ -1,0 +1,159 @@
+@import "tailwindcss";
+
+/**
+ * The same palette as the mobile app (apps/mobile/src/theme.ts), so the two
+ * read as one product rather than two projects that share a name.
+ *
+ * - Deep emerald, not bright. Bright green reads as a messaging app; a darker,
+ *   desaturated green reads as a bank, which is what a screen showing somebody
+ *   their money should feel like.
+ * - Gold used sparingly - never on buttons, only on the figure that matters.
+ * - Warm neutrals: cool greys beside green look clinical.
+ * - Money colours stay conventionally red and green, and deliberately are NOT
+ *   the brand colour, so "good" and "bad" read without knowing the brand.
+ */
+:root {
+  --emerald-900: #06351F;
+  --emerald-800: #0A4A2C;
+  --emerald-700: #0E6039;
+  --emerald-600: #12784A;
+  --emerald-500: #189459;
+  --emerald-100: #D6EBDF;
+  --emerald-50:  #EDF6F1;
+
+  --gold-700: #8A6B12;
+  --gold-500: #C8A227;
+  --gold-50:  #FBF6E7;
+
+  --n-900: #101614;
+  --n-700: #33413B;
+  --n-500: #5F6E67;
+  --n-300: #9DA9A3;
+  --n-200: #DFE5E2;
+  --n-100: #EFF2F0;
+  --n-50:  #F7F9F8;
+
+  --positive: #0E7A47;
+  --positive-soft: #E7F4EC;
+  --negative: #B3261E;
+  --negative-soft: #FCEBEA;
+  --warn: #9A6300;
+  --warn-soft: #FFF4E0;
+
+  --background: var(--n-50);
+  --foreground: var(--n-900);
+}
+
+@theme inline {
+  --color-brand-50:  var(--emerald-50);
+  --color-brand-100: var(--emerald-100);
+  --color-brand-500: var(--emerald-500);
+  --color-brand-600: var(--emerald-600);
+  --color-brand-700: var(--emerald-700);
+  --color-brand-800: var(--emerald-800);
+  --color-brand-900: var(--emerald-900);
+
+  --color-gold-50:  var(--gold-50);
+  --color-gold-500: var(--gold-500);
+  --color-gold-700: var(--gold-700);
+
+  --color-ink:   var(--n-900);
+  --color-body:  var(--n-700);
+  --color-muted: var(--n-500);
+  --color-faint: var(--n-300);
+  --color-line:  var(--n-200);
+  --color-line-soft: var(--n-100);
+  --color-surface: #ffffff;
+  --color-canvas: var(--n-50);
+
+  --color-positive: var(--positive);
+  --color-positive-soft: var(--positive-soft);
+  --color-negative: var(--negative);
+  --color-negative-soft: var(--negative-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+/*
+ * No dark mode. A half-built dark theme looks worse than none, and every
+ * screen here is dense financial tables where contrast has to be exact. Better
+ * to do it deliberately later than to invert colours and hope.
+ */
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  /* Inter, loaded by next/font in layout.tsx. The stack after it only matters
+     for the instant before it lands. */
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system,
+               "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Inter's defaults leave gaps at display sizes; these are its own
+     recommended features for interface text. */
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Headings and figures set slightly tight - at 24px and up, default tracking
+   looks loose and amateurish. */
+h1, h2, h3 { letter-spacing: -0.015em; }
+.figure { letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+
+/* Figures line up in columns only if the digits are the same width. */
+.tabular { font-variant-numeric: tabular-nums; }
+
+/*
+ * Loading, without losing the page.
+ *
+ * Two different states, and conflating them is what made every filter press
+ * feel like a page load:
+ *
+ *   .skeleton  - there is nothing to show yet. A grey block the shape of the
+ *                thing that is coming, so the layout does not jump when it
+ *                arrives.
+ *   .settling  - there IS something to show and it is about to be replaced.
+ *                The figures stay exactly where they are and go quiet for a
+ *                moment. Nothing moves, so the eye keeps its place.
+ */
+@keyframes munim-sheen {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.skeleton {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-line-soft) 0%,
+    var(--color-line) 40%,
+    var(--color-line-soft) 80%
+  );
+  background-size: 200% 100%;
+  animation: munim-sheen 1.4s ease-in-out infinite;
+  border-radius: 6px;
+  color: transparent;
+  user-select: none;
+}
+
+/*
+ * Deliberately gentle. A figure that flashes on every keystroke of a filter is
+ * worse than one that does not react at all - the point is to say "this is
+ * being checked", not to demand attention.
+ */
+.settling {
+  opacity: 0.45;
+  transition: opacity 140ms ease-out;
+}
+
+.settled { opacity: 1; transition: opacity 220ms ease-out; }
+
+/*
+ * Somebody who has asked their system for less movement gets none. A shimmer
+ * is decoration; the grey block underneath still does the job.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+  .settling, .settled { transition: none; }
+}

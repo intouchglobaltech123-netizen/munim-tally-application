@@ -1,0 +1,94 @@
+{
+  "expo": {
+    "name": "Munim",
+    "slug": "munim",
+    "scheme": [
+      "munim",
+      "com.googleusercontent.apps.34690963602-qd64t6d2t0m1dua5q0q750llgtl40rhj"
+    ],
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.munim.mobile",
+      "infoPlist": {},
+      "associatedDomains": [
+        "applinks:munim.app"
+      ]
+    },
+    "android": {
+      "package": "app.munim.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#0A4A2C",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.CAMERA"
+      ],
+      "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "munim.app",
+              "pathPrefix": "/p"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#0A4A2C"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#0E6039"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Munim uses the camera only to scan a pairing code or a product barcode. Nothing is photographed or uploaded.",
+          "recordAudioAndroid": false
+        }
+      ]
+    ],
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8867592a-50ad-479d-82f5-63f2db8d0ad9"
+      }
+    },
+    "owner": "arul-dev",
+    "androidStatusBar": {
+      "backgroundColor": "#0A4A2C"
+    },
+    "backgroundColor": "#F7F9F8"
+  }
+}

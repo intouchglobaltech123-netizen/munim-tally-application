@@ -1,0 +1,8 @@
+{
+  "name": "mock-tally",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Emulates the Tally Prime / ERP 9 XML gateway on port 9000",
+  "main": "src/index.js",
+  "scripts": { "start": "node src/index.js" }
+}

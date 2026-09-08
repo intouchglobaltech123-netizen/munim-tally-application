@@ -1,0 +1,26 @@
+{
+  "cloudUrl": "http://localhost:8080",
+  "tallyUrl": "http://localhost:9000",
+  "tallyVersion": "prime",
+  "deviceToken": "dev_xvkdh65a6m",
+  "connectorId": "con_asrg1cfxfb",
+  "orgId": "org_m405gf6j7n",
+  "orgName": "Demo Traders",
+  "phone": "",
+  "companies": [
+    {
+      "tallyGuid": "c1-9f2a-4b11",
+      "name": "R \u0026 K Traders",
+      "fyStart": "20250401",
+      "enabled": true
+    },
+    {
+      "tallyGuid": "c2-7e3b-8d44",
+      "name": "Munim Tech Pvt Ltd",
+      "fyStart": "20250401",
+      "enabled": true
+    }
+  ],
+  "pairedAt": "2026-08-31T10:35:46Z",
+  "intervalSecs": 30
+}

@@ -1,0 +1,9 @@
+﻿{
+    "cloudUrl":  "http://localhost:8080",
+    "tallyUrl":  "http://localhost:9000",
+    "tallyVersion":  "prime",
+    "deviceToken":  "dev_ib73dm7hkg",
+    "connectorId":  "con_arnbz3em09",
+    "orgName":  "Arul G (PowerShell)",
+    "intervalSecs":  30
+}

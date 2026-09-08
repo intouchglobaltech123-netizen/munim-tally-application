@@ -1,0 +1,16 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# pnpm blocks postinstall scripts unless a package is named here - a sensible
+# default, since an install otherwise runs arbitrary code from every dependency.
+# These are the ones that genuinely need to build or fetch a native binary.
+#
+# (The equivalent "pnpm.onlyBuiltDependencies" field in package.json is no longer
+# read by pnpm 9+, which is why it moved here.)
+allowBuilds:
+  esbuild: true
+  sharp: true
+  protobufjs: true
+  msgpackr-extract: true
+  unrs-resolver: true

@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Munim Setup</title>
+<style>
+  :root{
+    --green:#12923f; --green-dark:#0d6e2f; --green-soft:#eaf6ee;
+    --red:#c62828; --red-soft:#fdecea; --amber:#b26a00; --amber-soft:#fff5e5;
+    --ink:#16281c; --muted:#607066; --line:#dfe6e1; --bg:#f4f7f5; --card:#fff;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.55 "Segoe UI",system-ui,-apple-system,sans-serif;
+       color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased}
+  .shell{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+
+  /* ---- left rail ---- */
+  aside{background:linear-gradient(170deg,var(--green-dark),var(--green));color:#fff;padding:32px 28px}
+  .logo{display:flex;align-items:center;gap:10px;font-size:21px;font-weight:700;letter-spacing:-.3px}
+  .logo .mark{width:32px;height:32px;border-radius:8px;background:#fff;color:var(--green);
+       display:grid;place-items:center;font-weight:800;font-size:18px}
+  .tag{opacity:.82;font-size:13px;margin:6px 0 40px 42px}
+  .steps{list-style:none;padding:0;margin:0;display:grid;gap:4px}
+  .steps li{display:flex;gap:12px;align-items:flex-start;padding:11px 12px;border-radius:10px;
+       opacity:.62;transition:.18s}
+  .steps li.on{background:rgba(255,255,255,.16);opacity:1}
+  .steps li.done{opacity:.95}
+  .dot{width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.6);
+       display:grid;place-items:center;font-size:11px;font-weight:700;flex:0 0 auto;margin-top:1px}
+  .steps li.done .dot{background:#fff;color:var(--green);border-color:#fff}
+  .steps li.on .dot{border-color:#fff}
+  .steps b{display:block;font-weight:600;font-size:14px}
+  .steps span{font-size:12px;opacity:.8}
+  .rail-foot{position:absolute;bottom:26px;font-size:12px;opacity:.7;max-width:224px}
+
+  /* ---- right pane ---- */
+  main{padding:44px 52px;max-width:760px}
+  h1{font-size:26px;margin:0 0 6px;letter-spacing:-.4px}
+  .lede{color:var(--muted);margin:0 0 28px}
+  .panel{display:none}
+  .panel.on{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+        padding:18px 20px;margin-bottom:12px}
+
+  /* checks */
+  .check{display:flex;gap:14px;align-items:flex-start;background:var(--card);
+         border:1px solid var(--line);border-radius:var(--radius);padding:15px 18px;margin-bottom:10px}
+  .check .ico{width:26px;height:26px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;
+        font-size:15px;font-weight:700;color:#fff;margin-top:1px}
+  .pass .ico{background:var(--green)} .fail .ico{background:var(--red)} .warn .ico{background:var(--amber)}
+  .pend .ico{background:#c3cec7}
+  .check b{display:block;font-size:14.5px}
+  .check .detail{color:var(--muted);font-size:13px}
+  .fixbox{margin-top:9px;padding:11px 13px;border-radius:9px;font-size:13px;line-height:1.5}
+  .fail .fixbox{background:var(--red-soft);color:#8c1d18}
+  .warn .fixbox{background:var(--amber-soft);color:#7a4a00}
+  .fixbox a{color:inherit}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid #c3cec7;border-top-color:var(--green);
+        border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* forms */
+  label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+  .field{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:11px;
+         background:#fff;overflow:hidden;transition:.15s}
+  .field:focus-within{border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+  .prefix{padding:0 12px;color:var(--muted);font-weight:600;border-right:1px solid var(--line);
+          align-self:stretch;display:flex;align-items:center;background:#fafbfa}
+  input{border:0;outline:0;padding:13px 14px;font-size:16px;width:100%;font-family:inherit}
+  input.otp{letter-spacing:.45em;font-weight:700;font-size:22px;text-align:center}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:7px}
+
+  /* buttons */
+  .row{display:flex;gap:10px;align-items:center;margin-top:22px}
+  button{font:inherit;font-weight:600;border-radius:11px;padding:12px 22px;cursor:pointer;
+         border:1.5px solid transparent;transition:.15s}
+  .primary{background:var(--green);color:#fff}
+  .primary:hover:not(:disabled){background:var(--green-dark)}
+  .ghost{background:#fff;border-color:var(--line);color:var(--ink)}
+  .ghost:hover{border-color:#c3cec7}
+  .link{background:none;border:0;color:var(--green);padding:0;text-decoration:underline}
+  button:disabled{opacity:.5;cursor:not-allowed}
+
+  /* qr */
+  .qr-wrap{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
+  .qr{width:190px;height:190px;border:1px solid var(--line);border-radius:14px;padding:9px;background:#fff}
+  .qr img{width:100%;height:100%;display:block;image-rendering:pixelated}
+  .qr-copy{flex:1;min-width:230px}
+  ol.mini{margin:10px 0 0;padding-left:20px;color:var(--muted);font-size:13.5px}
+  ol.mini li{margin-bottom:5px}
+
+  /* companies */
+  .co{display:flex;gap:13px;align-items:center;padding:14px 16px;border:1.5px solid var(--line);
+      border-radius:12px;margin-bottom:9px;cursor:pointer;background:#fff;transition:.15s}
+  .co:hover{border-color:#bcd6c5}
+  .co.sel{border-color:var(--green);background:var(--green-soft)}
+  .co input{width:18px;height:18px;accent-color:var(--green);flex:0 0 auto}
+  .co b{display:block;font-size:14.5px}
+  .co span{font-size:12.5px;color:var(--muted)}
+
+  .alert{padding:12px 15px;border-radius:11px;font-size:13.5px;margin:14px 0;display:none}
+  .alert.show{display:block}
+  .alert.err{background:var(--red-soft);color:#8c1d18}
+  .alert.ok{background:var(--green-soft);color:var(--green-dark)}
+
+  .done-mark{width:64px;height:64px;border-radius:50%;background:var(--green);color:#fff;
+       display:grid;place-items:center;font-size:33px;margin-bottom:18px}
+  .stat{display:flex;gap:26px;margin:22px 0;flex-wrap:wrap}
+  .stat div b{display:block;font-size:19px}
+  .stat div span{font-size:12.5px;color:var(--muted)}
+
+  @media(max-width:860px){.shell{grid-template-columns:1fr}aside{padding:22px}
+    .steps{grid-auto-flow:column;overflow-x:auto}.steps span{display:none}main{padding:28px 22px}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside>
+    <div class="logo"><span class="mark">M</span> Munim</div>
+    <div class="tag">Tally on your mobile</div>
+    <ul class="steps" id="steps">
+      <li data-s="0" class="on"><span class="dot">1</span><span><b>System check</b><span>Tally & internet</span></span></li>
+      <li data-s="1"><span class="dot">2</span><span><b>Scan to connect</b><span>Use the Munim app</span></span></li>
+      <li data-s="2"><span class="dot">3</span><span><b>Finish</b><span>Start syncing</span></span></li>
+    </ul>
+    <div class="rail-foot">Munim only <b>reads</b> your Tally data. It never writes or changes anything in your books.</div>
+  </aside>
+
+  <main>
+    <!-- 0: checks -->
+    <section class="panel on" data-p="0">
+      <h1>Checking this computer</h1>
+      <p class="lede">Munim needs Tally running here, and an internet connection.</p>
+      <div id="checks"></div>
+      <div class="row">
+        <button class="primary" id="c-next" disabled>Continue</button>
+        <button class="ghost" id="c-again">Check again</button>
+        <span id="c-busy" class="hint" style="margin:0"></span>
+      </div>
+    </section>
+
+    <!-- 1: qr scan -->
+    <section class="panel" data-p="1">
+      <h1>Scan to Connect</h1>
+      <p class="lede">Open the Munim app on your phone, create your profile, and scan this QR code to link your Tally.</p>
+      
+      <div class="card qr-wrap">
+        <div class="qr"><img id="qr-scan" alt="Scan with Munim app"></div>
+        <div class="qr-copy">
+          <b id="q-status"><span class="spin"></span> Waiting for you to scan...</b>
+          <ol class="mini">
+            <li>Open the Munim app on your phone</li>
+            <li>Sign in with your mobile number</li>
+            <li>Tap <b>Link Tally</b> and scan this code</li>
+          </ol>
+          <div class="hint">No app yet? Point your phone camera at the code &mdash;
+            it will take you to the download page.</div>
+        </div>
+      </div>
+      <div class="alert err" id="q-err"></div>
+      <div class="row">
+        <button class="ghost" id="q-retry" style="display:none">Show a new code</button>
+        <button class="ghost" id="q-back">Back</button>
+      </div>
+    </section>
+<!-- 2: done -->
+    <section class="panel" data-p="2">
+      <div class="done-mark">&#10003;</div>
+      <h1>Munim is connected</h1>
+      <p class="lede">Your Tally data is syncing now. Open the app on your phone to see it.</p>
+      <div class="card">
+        <div class="stat">
+          <div><b id="d-org">-</b><span>Account</span></div>
+          <div><b id="d-co">-</b><span>Books found in Tally</span></div>
+          <div><b>Every 30s</b><span>Update frequency</span></div>
+        </div>
+        <div class="hint">Munim runs in the background and starts automatically with Windows.
+          You can close this window — leave Tally open for syncing to continue.</div>
+      </div>
+      <div class="row"><button class="primary" id="f-close">Close setup</button></div>
+    </section>
+  </main>
+</div>
+
+<script>
+const T = new URLSearchParams(location.search).get('t') || '';
+const $ = s => document.querySelector(s);
+const api = async (path, opts = {}) => {
+  const r = await fetch(path, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', 'X-Setup-Token': T, ...(opts.headers || {}) }
+  });
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(body?.error?.message || 'Something went wrong. Please try again.');
+  return body;
+};
+
+const showErr = (el, msg) => { el.textContent = msg; el.classList.add('show'); };
+const hideErr = el => el.classList.remove('show');
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+let step = 0, state = {};
+function go(n) {
+  step = n;
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', +p.dataset.p === n));
+  document.querySelectorAll('#steps li').forEach(li => {
+    const s = +li.dataset.s;
+    li.classList.toggle('on', s === n);
+    li.classList.toggle('done', s < n);
+    li.querySelector('.dot').textContent = s < n ? 'o"' : s + 1;
+  });
+  window.scrollTo(0, 0);
+}
+
+/* ---------- step 0: checks ---------- */
+const ICON = { pass: 'o"', fail: '!', warn: '!', pend: '' };
+function renderChecks(rep) {
+  $('#checks').innerHTML = rep.results.map(r => `
+    <div class="check ${r.status}">
+      <div class="ico">${ICON[r.status] || ''}</div>
+      <div style="flex:1">
+        <b>${r.label}</b>
+        <div class="detail">${r.detail || ''}</div>
+        ${r.fix ? `<div class="fixbox">${r.fix}</div>` : ''}
+      </div>
+    </div>`).join('');
+  $('#c-next').disabled = !rep.ok;
+}
+let checkTimer = null;
+async function runChecks() {
+  $('#c-busy').innerHTML = '<span class="spin"></span> checking...';
+  try {
+    const rep = await api('/api/checks');
+    renderChecks(rep);
+    clearTimeout(checkTimer);
+    if (!rep.ok) checkTimer = setTimeout(runChecks, 4000);
+  } catch (e) {
+    $('#checks').innerHTML = `<div class="check fail"><div class="ico">!</div><div><b>Check failed</b>
+      <div class="detail">${e.message}</div></div></div>`;
+  } finally { $('#c-busy').textContent = ''; }
+}
+$('#c-again').onclick = runChecks;
+$('#c-next').onclick = () => { clearTimeout(checkTimer); go(1); initQR(); };
+
+/* ---------- step 1: qr scan ---------- */
+let pollTimer;
+async function initQR() {
+  try {
+    hideErr($('#q-err'));
+    $('#q-retry').style.display = 'none';
+    $('#q-status').innerHTML = '<span class="spin"></span> Waiting for you to scan...';
+    const res = await api('/api/intent', { method: 'POST' });
+    // Encode the deep link, not the raw id - a phone camera must be able to act on it.
+    $('#qr-scan').src = '/api/qr?d=' + encodeURIComponent(res.pairUrl);
+    clearInterval(pollTimer);
+    pollTimer = setInterval(pollQR, 2000);
+  } catch (e) {
+    $('#q-err').textContent = e.message; $('#q-err').classList.add('show');
+  }
+}
+
+async function pollQR() {
+  try {
+    const r = await api('/api/intent');
+    if (r.expired) {
+      clearInterval(pollTimer);
+      $('#q-status').textContent = 'This code has expired.';
+      $('#q-retry').style.display = 'inline-block';
+      return;
+    }
+    if (r.approved) {
+      clearInterval(pollTimer);
+      $('#q-status').textContent = 'Connected' + (r.approvedBy ? ' by ' + r.approvedBy : '');
+      $('#d-org').textContent = r.orgName || 'Connected';
+      void finishSetup();
+    }
+  } catch (e) {
+    clearInterval(pollTimer);
+    $('#q-err').textContent = e.message;
+    $('#q-err').classList.add('show');
+  }
+}
+
+$('#q-retry').onclick = initQR;
+$('#q-back').onclick = () => { clearInterval(pollTimer); go(0); runChecks(); };
+
+/* ---------- step 2: register books and finish ---------- */
+async function finishSetup() {
+  try {
+    // Every company open in Tally is registered. The owner never picks here -
+    // these are their own books, and what actually syncs is settled in the app.
+    const r = await api('/api/finish', { method: 'POST' });
+    $('#d-co').textContent = r.companies;
+    $('#d-names').textContent = (r.names || []).join(', ');
+    go(2);
+  } catch (e) {
+    $('#q-status').textContent = 'Connected, but Tally could not be read.';
+    showErr($('#q-err'), e.message + ' Open your company in Tally, then click Try again.');
+    $('#q-retry').textContent = 'Try again';
+    $('#q-retry').style.display = 'inline-block';
+    $('#q-retry').onclick = finishSetup;
+  }
+}
+
+$('#f-close').onclick = () => window.close();
+
+/* ---------- boot ---------- */
+(async () => {
+  try {
+    state = await api('/api/state');
+    if (state.paired) {
+      $('#d-org').textContent = state.orgName || 'Connected';
+      void finishSetup(); return;
+    }
+  } catch (_) { /* fall through to checks */ }
+  runChecks();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "cloudUrl": "http://localhost:8080",
+  "tallyUrl": "http://localhost:9000",
+  "tallyVersion": "prime",
+  "deviceToken": "dev_jjmcqszp2e",
+  "connectorId": "con_ckielohg2y",
+  "orgId": "org_k83kpsx1zh",
+  "orgName": "Sri Balaji Hardware",
+  "phone": "",
+  "companies": [
+    {
+      "tallyGuid": "c1-9f2a-4b11",
+      "name": "R \u0026 K Traders",
+      "fyStart": "20250401",
+      "enabled": true
+    },
+    {
+      "tallyGuid": "c2-7e3b-8d44",
+      "name": "Munim Tech Pvt Ltd",
+      "fyStart": "20250401",
+      "enabled": true
+    }
+  ],
+  "pairedAt": "2026-08-31T12:02:15Z",
+  "intervalSecs": 30
+}

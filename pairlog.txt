@@ -1,0 +1,19 @@
+﻿[  OK  ] Windows                  Microsoft Windows NT 10.0.26200.0
+[  OK  ] Internet connection      Connected
+[  OK  ] Munim server             Reachable
+[  OK  ] Tally connection         Connected at http://localhost:9000
+[  OK  ] Company open in Tally    1 open: Arul G
+
+  Open the Munim app on your phone, tap "Link Tally", and scan:
+
+      https://munim.app/p/int_r4rpp9o7wh
+
+  Or type this code in the app:  int_r4rpp9o7wh
+  Waiting...
+.
+.
+.
+
+  Connected to Arul G (PowerShell).
+  Syncing  book(s): Arul G
+  Arul G                       71 records  alterId 0 -> 55

@@ -1,0 +1,23 @@
+# EAS installs dependencies on its own servers from the lockfile, so shipping
+# node_modules is pure upload time - and in this monorepo it is worse than that:
+# the archiver walks apps/web/node_modules and dies on a pnpm symlink it cannot
+# read ("UNKNOWN: scandir @firebase/messaging/sw"), which is the same directory
+# that used to take Metro down.
+node_modules/
+**/node_modules/
+
+# Nothing outside the mobile app belongs in an Android build.
+../api/
+../web/
+../../connector/
+../../connector-ps/
+../../docs/
+../../scripts/
+../../tools/
+../../mock-tally/
+
+# Local noise
+*.log
+.env.local
+.expo/
+dist/

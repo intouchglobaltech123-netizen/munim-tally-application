@@ -1,0 +1,19 @@
+{
+  "name": "@munim/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Munim backend - real Postgres, multi-tenant",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "migrate": "node src/migrate.js",
+    "test": "node --test \"test/**/*.test.js\""
+  },
+  "dependencies": {
+    "pg": "^8.13.1",
+    "qrcode": "^1.5.4"
+  }
+}
