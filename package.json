@@ -38,7 +38,7 @@
     "fix:react": "node tools/check-react.js --fix"
   },
   "devDependencies": {
-    "turbo": "latest",
+    "turbo": "^2.10.12",
     "prettier": "latest"
   },
   "packageManager": "pnpm@9.15.4"
