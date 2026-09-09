@@ -162,19 +162,23 @@ test('the script parses under PowerShell itself', (t) => {
 });
 
 /**
- * The file the customer actually runs.
+ * The file the customer actually runs, parsed the way it is actually run.
  *
- * The test above parses the template. The customer never sees the template:
- * their .bat pipes the PERSONALISED script into iex, and personalise() puts a
- * header in front of it. That difference shipped a broken installer once - the
- * template is saved with a byte order mark, and prepending anything pushed the
- * BOM into the middle of the file, where PowerShell rejects the whole thing
- * with "Unexpected token 'param'". The template parsed perfectly the entire
- * time.
+ * Two differences from the test above, and both of them shipped a broken
+ * installer once.
  *
- * So parse the output, not the input.
+ * It parses the PERSONALISED script, not the template. The customer never
+ * sees the template.
+ *
+ * And it parses it as a STRING, not as a file. The .bat does
+ * `iwr -useb <url> | iex`, so PowerShell is handed text, not a path. That
+ * matters because a UTF-8 byte order mark is an encoding marker in a file and
+ * PowerShell skips it - but in a string it is just U+FEFF sitting in front of
+ * [CmdletBinding()], and the parser rejects everything after it. Writing the
+ * script to a file and parsing the file reports PARSE OK for content that
+ * cannot run. Which is what happened.
  */
-test('the personalised script parses under PowerShell too', (t) => {
+test('the personalised script parses the way iex will run it', (t) => {
   const { execFileSync } = require('child_process');
   const ps = '/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe';
   if (!fs.existsSync(ps)) return t.skip('PowerShell is not reachable from here');
@@ -183,37 +187,48 @@ test('the personalised script parses under PowerShell too', (t) => {
   const personalised = installer.personalise(
     src, 'https://api.example.com', 'int_TESTCODE1234', 'Verma Traders');
 
-  // A BOM anywhere but byte zero is the failure this test exists for.
-  assert.ok(personalised.startsWith('\uFEFF'),
-    'the byte order mark must lead the file');
-  assert.equal(personalised.indexOf('\uFEFF', 1), -1,
-    'a second BOM means one was left in the middle of the script');
+  // A byte order mark anywhere is the failure this test exists for: iex is
+  // given a string, and there is no such thing as a marker in a string.
+  assert.ok(!personalised.includes('\uFEFF'),
+    'the served script must carry no byte order mark - iex cannot skip one');
 
   assert.ok(personalised.includes("$Cloud = 'https://api.example.com'"));
   assert.ok(personalised.includes("$Code = 'int_TESTCODE1234'"));
   assert.ok(personalised.includes("$Command = 'setup'"),
     'running the file with no arguments has to install, not just report');
 
-  const tmp = path.join(path.dirname(SCRIPT), '.personalised-test.ps1');
-  fs.writeFileSync(tmp, personalised);
+  /*
+   * Handed over as base64 in a file, then decoded back to a string.
+   *
+   * Not passed on the command line - 90kB does not fit, spawn fails with
+   * E2BIG. Not read with Get-Content either, because that reads a FILE and
+   * would skip a byte order mark, which is the very thing being tested. Base64
+   * round-trips the exact characters iex would receive.
+   */
+  const tmp = path.join(path.dirname(SCRIPT), '.iex-parse-test.b64');
+  fs.writeFileSync(tmp, Buffer.from(personalised, 'utf8').toString('base64'), 'ascii');
+  let out;
   try {
-    const winPath = tmp.replace(/^\/mnt\/([a-z])\//, (_, d) => `${d.toUpperCase()}:\\`)
+    const winTmp = tmp.replace(/^\/mnt\/([a-z])\//, (_, d) => `${d.toUpperCase()}:\\`)
       .replace(/\//g, '\\');
-    const out = execFileSync(ps, ['-NoProfile', '-NonInteractive', '-Command', `
+    out = execFileSync(ps, ['-NoProfile', '-NonInteractive', '-Command', `
+      $b64 = [System.IO.File]::ReadAllText('${winTmp}')
+      $text = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($b64))
       $tokens = $null; $errors = $null
-      [System.Management.Automation.Language.Parser]::ParseFile(
-        '${winPath}', [ref]$tokens, [ref]$errors) | Out-Null
+      [System.Management.Automation.Language.Parser]::ParseInput(
+        $text, [ref]$tokens, [ref]$errors) | Out-Null
       if ($errors -and $errors.Count -gt 0) {
         $errors | Select-Object -First 5 | ForEach-Object {
           Write-Output ("line {0}: {1}" -f $_.Extent.StartLineNumber, $_.Message)
         }
       } else { Write-Output 'OK' }
-    `], { encoding: 'utf8', timeout: 120000 }).trim();
-    assert.equal(out, 'OK',
-      `PowerShell could not parse what the customer downloads:\n${out}`);
+    `], { encoding: 'utf8', timeout: 120000, maxBuffer: 32 * 1024 * 1024 }).trim();
   } finally {
     fs.rmSync(tmp, { force: true });
   }
+
+  assert.equal(out, 'OK',
+    `PowerShell could not parse what iex is handed:\n${out}`);
 });
 
 test('the script is brace-balanced', () => {

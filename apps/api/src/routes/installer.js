@@ -75,15 +75,20 @@ function personalise(script, cloud, code, orgName) {
   const q = (v) => `'${String(v).replace(/'/g, "''")}'`;   // PowerShell escaping
 
   /*
-   * Strip the byte order mark before anything is put in front of it.
+   * No byte order mark, anywhere.
    *
-   * The template is saved UTF-8 with a BOM, which is correct and which
-   * PowerShell wants at the very start of a file. Prepending the header pushed
-   * it into the middle, where it is no longer a BOM but a stray zero-width
-   * character sitting between a comment and <#. PowerShell then refuses the
-   * whole file - "Unexpected token 'param'" - and since this script is piped
-   * straight into iex by the customer's .bat, the failure lands on their
-   * screen during setup rather than anywhere we would see it.
+   * The template is saved UTF-8 with a BOM, which is right for a file on disk:
+   * PowerShell reads it as an encoding marker and skips it. This is never a
+   * file. The customer's .bat does `iwr -useb <url> | iex`, and iex is handed
+   * a STRING - where U+FEFF is not a marker, it is a zero-width character
+   * sitting in front of [CmdletBinding()]. The parser then refuses everything
+   * after it: "Unexpected attribute 'CmdletBinding'", then "Unexpected token
+   * 'param'", then every parameter default in turn.
+   *
+   * The difference is invisible to any check that writes the script out and
+   * parses the file, which is exactly how a first attempt at this passed while
+   * still failing on the customer's screen. Parse it as a string, the way iex
+   * will.
    */
   const body = script.replace(/^\uFEFF/, '');
 
@@ -109,9 +114,8 @@ function personalise(script, cloud, code, orgName) {
       'The installer template has changed and could not be personalised.');
   }
 
-  // Comments above param() are fine; only statements are not. The BOM goes
-  // back at the very front, where PowerShell expects it.
-  return '\uFEFF' + header + out;
+  // Comments above param() are fine; only statements are not.
+  return header + out;
 }
 
 /** Where the connector should send data - what the customer's browser reached. */
