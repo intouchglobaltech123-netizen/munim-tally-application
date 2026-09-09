@@ -33,17 +33,52 @@ export class ApiError extends Error {
   }
 }
 
+/*
+ * How long to wait before deciding a request is not coming back.
+ *
+ * A phone on a weak signal does not fail a fetch, it holds it open. Without a
+ * ceiling the screen that started it waits for ever - which is how sign-in
+ * could sit on "Signing you in…" with nothing wrong except the network.
+ *
+ * Thirty seconds is longer than any of these calls should take and short
+ * enough that somebody has not yet put the phone down.
+ */
+const TIMEOUT_MS = 30_000;
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = getToken();
-  const res = await fetch(`${API}${path}`, {
-    ...init,
-    cache: 'no-store',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(init.headers ?? {}),
-    },
-  });
+
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), TIMEOUT_MS);
+
+  let res: Response;
+  try {
+    res = await fetch(`${API}${path}`, {
+      ...init,
+      cache: 'no-store',
+      signal: abort.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(init.headers ?? {}),
+      },
+    });
+  } catch (e) {
+    /*
+     * fetch rejects for exactly two reasons a person can act on, and it does
+     * not distinguish them: the request was cut off, or the browser refused to
+     * make it. "Failed to fetch" covers a blocked origin, a server that is
+     * down, and no signal at all, so say what can actually be checked.
+     */
+    if ((e as Error).name === 'AbortError') {
+      throw new ApiError('TIMEOUT',
+        'The server did not answer in time. Check your connection and try again.', 0);
+    }
+    throw new ApiError('OFFLINE',
+      'Could not reach the Munim server. Check your internet connection.', 0);
+  } finally {
+    clearTimeout(timer);
+  }
 
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {

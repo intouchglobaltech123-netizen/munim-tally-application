@@ -27,6 +27,10 @@ export default function LoginPage() {
   const { refresh } = useAuth();
   const router = useRouter();
 
+  // Read after mount: window does not exist while this renders on the server.
+  const [origin, setOrigin] = useState('');
+  useEffect(() => setOrigin(window.location.origin), []);
+
   useEffect(() => {
     get<AuthConfig>('/v1/auth/config')
       .then(setCfg)
@@ -47,14 +51,35 @@ export default function LoginPage() {
     }
   }, [refresh, router]);
 
+  /*
+   * Redrawn on resize, because Google's button is a fixed-width iframe.
+   *
+   * It is sized once, in pixels, from the space available at that moment. A
+   * phone rotated after the page loads - or a keyboard opening and closing -
+   * leaves a button sized for the old width, and on the narrow side that means
+   * part of it is off the screen.
+   */
   useEffect(() => {
     if (!cfg?.google || !buttonRef.current) return;
-    void renderGoogleButton(
-      buttonRef.current,
-      cfg.google.web,      // a browser must use the web client
+    const el = buttonRef.current;
+
+    const draw = () => void renderGoogleButton(
+      el,
+      cfg.google!.web,      // a browser must use the web client
       (t) => void onToken(t),
       (m) => setErr(friendlyGoogleError(new Error(m))),
     );
+
+    draw();
+    let timer: ReturnType<typeof setTimeout>;
+    const onResize = () => { clearTimeout(timer); timer = setTimeout(draw, 150); };
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+    };
   }, [cfg, onToken]);
 
   return (
@@ -78,15 +103,37 @@ export default function LoginPage() {
               account is created for you.
             </p>
 
-            {/* Google requires their own rendered button, not a styled div. */}
-            <div ref={buttonRef} className="flex justify-center" />
+            {/* Google requires their own rendered button, not a styled div.
+                min-w-0 so the flex parent may shrink it rather than overflow. */}
+            <div ref={buttonRef} className="flex min-w-0 justify-center overflow-x-auto" />
 
             {busy ? (
               <p className="mt-4 text-center text-sm text-muted">Signing you in…</p>
             ) : (
-              <p className="mt-5 text-xs text-faint">
-                You stay signed in. No code to wait for, and nothing to remember.
-              </p>
+              <>
+                <p className="mt-5 text-xs text-faint">
+                  You stay signed in. No code to wait for, and nothing to remember.
+                </p>
+                {/*
+                  A tap that does nothing has no error to show, because Google
+                  does not report one. Saying where the button came from at
+                  least points whoever set this up at the right screen.
+                */}
+                <details className="mt-4">
+                  <summary className="cursor-pointer text-xs text-faint">
+                    Button does nothing when you tap it?
+                  </summary>
+                  <p className="mt-2 text-xs leading-relaxed text-muted">
+                    This site has to be listed on the Google client. In Google
+                    Cloud Console open Credentials, pick the OAuth client, and
+                    add this address under Authorised JavaScript origins:
+                    <code className="mt-1 block break-all rounded bg-line-soft px-1.5 py-1">
+                      {origin || '…'}
+                    </code>
+                    It can take a few minutes to take effect.
+                  </p>
+                </details>
+              </>
             )}
           </>
         ) : (

@@ -30,6 +30,7 @@ const secrets = require('./lib/secrets');
 const ratelimit = require('./lib/ratelimit');
 const scheduler = require('./lib/scheduler');
 const metrics = require('./lib/metrics');
+const cors = require('./lib/cors');
 const {
   send, fail, HttpError, readBody, json, bearer,
 } = require('./lib/http');
@@ -350,9 +351,15 @@ const TXN_ONE = new RegExp(
   '^/v1/companies/([^/]+)/txn/([a-z-]+)/([0-9a-f-]{36})$');
 const FIND = new RegExp('^/v1/companies/([^/]+)/find$');
 
+const CORS_ORIGINS = cors.parse(process.env.CORS_ORIGIN);
+
 const server = http.createServer(async (req, res) => {
   // The apps run on their own ports in development.
-  res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  const allow = cors.allowedOrigin(req.headers.origin, CORS_ORIGINS);
+  if (allow) {
+    res.setHeader('Access-Control-Allow-Origin', allow);
+    if (allow !== '*') res.setHeader('Vary', 'Origin');
+  }
   res.setHeader('Access-Control-Allow-Headers',
     'Content-Type,Authorization,Idempotency-Key,Content-Encoding');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');

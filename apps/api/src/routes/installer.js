@@ -161,6 +161,22 @@ async function download(ctx) {
 
   // Pre-approved: the person downloading is already signed in, so asking them
   // to approve their own download on their own phone is ceremony, not security.
+  /*
+   * Seven days, not an hour.
+   *
+   * An hour suits somebody installing on the machine in front of them. It does
+   * not suit the way this is actually distributed: the file is emailed to a
+   * shop and opened whenever the person who runs the till gets to it, which is
+   * routinely the next morning. An expired code there costs a phone call and a
+   * second download, and the customer has no idea why the file they were sent
+   * stopped working.
+   *
+   * The code stays cheap to leak. It is single use, it is bound to one
+   * connector row, and redeeming it is what hands over the device token - so a
+   * copy of the file is worthless the moment the real machine has run it. The
+   * week only widens the window in which an unredeemed code could be used by
+   * whoever holds the file, which is the same person the file was sent to.
+   */
   const deviceToken = auth.newToken('dev');
   const { rows: conn } = await query(
     `INSERT INTO connectors (org_id, machine_name, status, token_hash)
@@ -170,7 +186,7 @@ async function download(ctx) {
   await query(
     `INSERT INTO pair_intents
        (code, org_id, approved_by, connector_id, device_token_once, approved_at, expires_at)
-     VALUES ($1, $2, $3, $4, $5, now(), now() + interval '60 minutes')`,
+     VALUES ($1, $2, $3, $4, $5, now(), now() + interval '7 days')`,
     [code, s.org.id, s.user.id, conn[0].id, deviceToken],
   );
 
