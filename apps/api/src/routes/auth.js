@@ -55,7 +55,7 @@ async function issueSession(ctx, { uid, phone, email, via }) {
 
   const kind = deviceKind(ctx);
 
-  return tx(async (c) => {
+  const out = await tx(async (c) => {
     const SELECT = `SELECT u.*, o.name AS org_name, o.plan, o.trial_ends_at,
                            o.message_credits
                       FROM users u JOIN orgs o ON o.id = u.org_id`;
@@ -188,34 +188,6 @@ async function issueSession(ctx, { uid, phone, email, via }) {
        VALUES ($1, $2, NULL, $3, $4, now())`,
       [auth.hash(token), u.id, deviceLabel(ctx), kind],
     );
-    /*
-     * Recorded through the audit library, not a bare insert, so a sign-in
-     * carries the same who/where/device detail as every other entry - which is
-     * exactly what an owner looks at first when something seems wrong.
-     *
-     * Deliberately outside the transaction's connection: this is a record of
-     * something that happened, and it should survive even if the sign-in
-     * transaction is later rolled back for an unrelated reason.
-     */
-    await audit.record(ctx, `auth.${via}`, {
-      entityId: u.id,
-      entityName: deviceLabel(ctx),
-      meta: { isNew, kind, joinedByInvite, replacedSessions: replaced },
-      session: { org: { id: u.org_id }, user: { id: u.id, name: u.name, email: u.email } },
-    });
-
-    /*
-     * A successful sign-in wipes the failure record.
-     *
-     * Otherwise a shop owner who fumbled four times yesterday walks in one
-     * mistake away from a lockout today, for no security benefit: the point of
-     * counting failures is to catch a run of them, not to hold a grudge.
-     */
-    await security.record(ctx, {
-      userId: u.id, orgId: u.org_id, email: u.email || '', ok: true, via,
-    });
-    await security.clearFailures(u.id, u.email || '');
-
     return {
       access: token,
       isNewAccount: isNew,
@@ -228,8 +200,67 @@ async function issueSession(ctx, { uid, phone, email, via }) {
       needsOnboarding: !(u.org_name && u.org_name.trim()),
       user: { id: u.id, name: u.name, phone: u.phone, email: u.email, role: u.role },
       org: { id: u.org_id, name: u.org_name, plan: u.plan, trialEndsAt: u.trial_ends_at },
+      _audit: {
+        via, isNew, kind, joinedByInvite, replaced,
+        userId: u.id, orgId: u.org_id, name: u.name, email: u.email,
+      },
     };
   });
+
+  /*
+   * The bookkeeping runs AFTER the transaction has committed, not inside it.
+   *
+   * Both of these already used their own connection so that a record of what
+   * happened survives a rollback. Awaiting them inside the transaction kept it
+   * open across three more round trips anyway, and an open transaction is
+   * holding every row it has written.
+   *
+   * That matters for one account in particular. A staff account is created at
+   * boot from MUNIM_OPERATOR_EMAILS with an email and no Google identity, so
+   * its first sign-in - and every sign-in until one succeeds - updates the
+   * users row to fill in firebase_uid. It is the only account whose sign-in
+   * writes to users at all: everybody else arrived through Google and already
+   * has one. So it is the only sign-in that locks a users row, and the only
+   * one that can be blocked by a lock left behind on it.
+   *
+   * Neither call is allowed to fail the sign-in. Somebody is standing at a
+   * till: an audit row that did not write is a problem for us, not a reason to
+   * refuse them entry.
+   */
+  const a = out._audit;
+  delete out._audit;
+
+  try {
+    await audit.record(ctx, `auth.${a.via}`, {
+      entityId: a.userId,
+      entityName: deviceLabel(ctx),
+      meta: {
+        isNew: a.isNew, kind: a.kind,
+        joinedByInvite: a.joinedByInvite, replacedSessions: a.replaced,
+      },
+      session: { org: { id: a.orgId }, user: { id: a.userId, name: a.name, email: a.email } },
+    });
+  } catch (e) {
+    console.error('  sign-in audit failed (sign-in itself was fine):', e.message);
+  }
+
+  /*
+   * A successful sign-in wipes the failure record.
+   *
+   * Otherwise a shop owner who fumbled four times yesterday walks in one
+   * mistake away from a lockout today, for no security benefit: the point of
+   * counting failures is to catch a run of them, not to hold a grudge.
+   */
+  try {
+    await security.record(ctx, {
+      userId: a.userId, orgId: a.orgId, email: a.email || '', ok: true, via: a.via,
+    });
+    await security.clearFailures(a.userId, a.email || '');
+  } catch (e) {
+    console.error('  clearing sign-in failures failed:', e.message);
+  }
+
+  return out;
 }
 
 /**
