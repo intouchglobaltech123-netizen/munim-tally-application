@@ -161,6 +161,61 @@ test('the script parses under PowerShell itself', (t) => {
   assert.equal(out, 'OK', `PowerShell could not parse the connector:\n${out}`);
 });
 
+/**
+ * The file the customer actually runs.
+ *
+ * The test above parses the template. The customer never sees the template:
+ * their .bat pipes the PERSONALISED script into iex, and personalise() puts a
+ * header in front of it. That difference shipped a broken installer once - the
+ * template is saved with a byte order mark, and prepending anything pushed the
+ * BOM into the middle of the file, where PowerShell rejects the whole thing
+ * with "Unexpected token 'param'". The template parsed perfectly the entire
+ * time.
+ *
+ * So parse the output, not the input.
+ */
+test('the personalised script parses under PowerShell too', (t) => {
+  const { execFileSync } = require('child_process');
+  const ps = '/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe';
+  if (!fs.existsSync(ps)) return t.skip('PowerShell is not reachable from here');
+
+  const installer = require('../src/routes/installer');
+  const personalised = installer.personalise(
+    src, 'https://api.example.com', 'int_TESTCODE1234', 'Verma Traders');
+
+  // A BOM anywhere but byte zero is the failure this test exists for.
+  assert.ok(personalised.startsWith('\uFEFF'),
+    'the byte order mark must lead the file');
+  assert.equal(personalised.indexOf('\uFEFF', 1), -1,
+    'a second BOM means one was left in the middle of the script');
+
+  assert.ok(personalised.includes("$Cloud = 'https://api.example.com'"));
+  assert.ok(personalised.includes("$Code = 'int_TESTCODE1234'"));
+  assert.ok(personalised.includes("$Command = 'setup'"),
+    'running the file with no arguments has to install, not just report');
+
+  const tmp = path.join(path.dirname(SCRIPT), '.personalised-test.ps1');
+  fs.writeFileSync(tmp, personalised);
+  try {
+    const winPath = tmp.replace(/^\/mnt\/([a-z])\//, (_, d) => `${d.toUpperCase()}:\\`)
+      .replace(/\//g, '\\');
+    const out = execFileSync(ps, ['-NoProfile', '-NonInteractive', '-Command', `
+      $tokens = $null; $errors = $null
+      [System.Management.Automation.Language.Parser]::ParseFile(
+        '${winPath}', [ref]$tokens, [ref]$errors) | Out-Null
+      if ($errors -and $errors.Count -gt 0) {
+        $errors | Select-Object -First 5 | ForEach-Object {
+          Write-Output ("line {0}: {1}" -f $_.Extent.StartLineNumber, $_.Message)
+        }
+      } else { Write-Output 'OK' }
+    `], { encoding: 'utf8', timeout: 120000 }).trim();
+    assert.equal(out, 'OK',
+      `PowerShell could not parse what the customer downloads:\n${out}`);
+  } finally {
+    fs.rmSync(tmp, { force: true });
+  }
+});
+
 test('the script is brace-balanced', () => {
   // A stray brace turns the rest of the file into part of the previous
   // function, and PowerShell reports it from somewhere unrelated.

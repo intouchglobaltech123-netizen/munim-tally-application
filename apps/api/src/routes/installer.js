@@ -47,17 +47,25 @@ function readTemplate() {
 function personalise(script, cloud, code, orgName) {
   const q = (v) => `'${String(v).replace(/'/g, "''")}'`;   // PowerShell escaping
 
-  const out = script
+  /*
+   * Strip the byte order mark before anything is put in front of it.
+   *
+   * The template is saved UTF-8 with a BOM, which is correct and which
+   * PowerShell wants at the very start of a file. Prepending the header pushed
+   * it into the middle, where it is no longer a BOM but a stray zero-width
+   * character sitting between a comment and <#. PowerShell then refuses the
+   * whole file - "Unexpected token 'param'" - and since this script is piped
+   * straight into iex by the customer's .bat, the failure lands on their
+   * screen during setup rather than anywhere we would see it.
+   */
+  const body = script.replace(/^\uFEFF/, '');
+
+  const out = body
     .replace('[string]$Cloud,', `[string]$Cloud = ${q(cloud)},`)
     .replace('[string]$Code,', `[string]$Code = ${q(code)},`)
     // Run with no arguments and the customer wants the whole install, not a
     // status check.
     .replace("[string]$Command = 'check',", "[string]$Command = 'setup',");
-
-  if (out === script) {
-    throw bad('INSTALLER_UNAVAILABLE',
-      'The installer template has changed and could not be personalised.');
-  }
 
   const header = [
     '# ---------------------------------------------------------------',
@@ -69,8 +77,14 @@ function personalise(script, cloud, code, orgName) {
     '',
   ].join('\n');
 
-  // Comments above param() are fine; only statements are not.
-  return header + out;
+  if (out === body) {
+    throw bad('INSTALLER_UNAVAILABLE',
+      'The installer template has changed and could not be personalised.');
+  }
+
+  // Comments above param() are fine; only statements are not. The BOM goes
+  // back at the very front, where PowerShell expects it.
+  return '\uFEFF' + header + out;
 }
 
 /** Where the connector should send data - what the customer's browser reached. */
@@ -299,4 +313,4 @@ async function publicScript(ctx, code) {
   };
 }
 
-module.exports = { download, oneLiner, publicScript, cloudUrlFor };
+module.exports = { download, oneLiner, publicScript, cloudUrlFor, personalise };
