@@ -17,7 +17,7 @@
     "auth:mode": "powershell -ExecutionPolicy Bypass -File ./scripts/auth-mode.ps1",
     "auth:test": "node tools/firebase-signin.js",
     "expose": "powershell -ExecutionPolicy Bypass -File ./scripts/expose-api.ps1",
-    "start": "npm run api",
+    "start": "node apps/api/src/index.js",
     "api:test": "wsl -e bash -lic \"cd apps/api; npm test\"",
     "api:stop": "wsl -e bash -lic \"pkill -f 'node src/index.js' || true\"",
     "db": "wsl -e bash -lic \"psql -d munim\"",
