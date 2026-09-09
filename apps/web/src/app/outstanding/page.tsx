@@ -9,6 +9,7 @@ import {
   Avatar, Badge, Button, Card, Empty, ErrorNote, OfflineBar, PageTitle, Sno,
   Spinner,
 } from '../../components/ui';
+import Filters, { type FilterSpec, type FilterValues, matches } from '../../components/Filters';
 
 const BUCKETS = ['0-30', '31-60', '61-90', '90+'] as const;
 
@@ -16,7 +17,7 @@ export default function OutstandingPage() {
   const { company } = useAuth();
   const [kind, setKind] = useState<'receivable' | 'payable'>('receivable');
   const [bucket, setBucket] = useState<string | null>(null);
-  const [q, setQ] = useState('');
+  const [f, setF] = useState<FilterValues>({});
   const [open, setOpen] = useState<string | null>(null);
   const [sent, setSent] = useState<Record<string, string>>({});
 
@@ -41,9 +42,31 @@ export default function OutstandingPage() {
   if (error) return <ErrorNote message={error} onRetry={reload} />;
   if (loading || !data) return <Spinner label="Loading outstanding…" />;
 
-  const needle = q.trim().toLowerCase();
+  /*
+   * What this list can be narrowed by.
+   *
+   * Declared here rather than inside the strip because the answers come from
+   * the loaded data - the credit-terms options below are the terms this
+   * business actually uses, not a guess at what an SMB might have.
+   */
+  type Party = Outstanding['items'][number];
+  const terms = [...new Set(data.items.map((p) => p.creditDays))].sort((a, b) => a - b);
+  const specs: FilterSpec<Party>[] = [
+    { key: 'q', label: 'Party', kind: 'search', on: (p) => p.party,
+      placeholder: 'Search party…' },
+    { key: 'amt', label: 'Amount pending', kind: 'amountRange', on: (p) => p.totalPaise },
+    { key: 'overdue', label: 'Has overdue', kind: 'toggle', on: (p) => p.overduePaise > 0 },
+    { key: 'phone', label: 'Has a phone number', kind: 'toggle', on: (p) => !!p.phone },
+    { key: 'terms', label: 'Credit terms', kind: 'select',
+      on: (p) => String(p.creditDays),
+      options: terms.map((d) => ({ value: String(d), label: d === 0 ? 'Cash' : `${d} days` })) },
+    { key: 'age', label: 'Oldest bill', kind: 'select',
+      on: (p) => bucketOf(p.oldestDays),
+      options: BUCKETS.map((b) => ({ value: b, label: b === '90+' ? '90+ days' : `${b} days` })) },
+  ];
+
   const items = data.items.filter((p) => {
-    if (needle && !p.party.toLowerCase().includes(needle)) return false;
+    if (!matches(p, specs, f)) return false;
     if (!bucket) return true;
     return p.bills.some((b) => b.days > 0 && bucketOf(b.days) === bucket);
   });
@@ -56,7 +79,7 @@ export default function OutstandingPage() {
       />
       <OfflineBar offline={offline} ageMs={stale} />
 
-      <div className="mb-5 flex flex-wrap items-center gap-2">
+      <Filters specs={specs} values={f} onChange={setF}>
         <div className="inline-flex overflow-hidden rounded-lg border border-line">
           {(['receivable', 'payable'] as const).map((k) => (
             <button key={k} onClick={() => { setKind(k); setBucket(null); }}
@@ -66,9 +89,7 @@ export default function OutstandingPage() {
             </button>
           ))}
         </div>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search party…"
-          className="min-w-48 flex-1 rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-brand-600" />
-      </div>
+      </Filters>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {BUCKETS.map((b) => {

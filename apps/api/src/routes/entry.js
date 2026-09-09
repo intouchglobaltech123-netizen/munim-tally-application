@@ -4,7 +4,6 @@ const auth = require('../lib/auth');
 const perms = require('../lib/permissions');
 const audit = require('../lib/audit');
 const { dateOnly } = audit;
-const webhooks = require('../lib/webhooks');
 const { HttpError, bad } = require('../lib/http');
 
 /**
@@ -624,11 +623,6 @@ async function result(ctx, id) {
         WHERE id = $1 AND org_id = $5`,
       [id, String(b.tallyGuid ?? '').slice(0, 120),
        String(b.voucherNumber ?? '').slice(0, 40), response, conn.orgId]);
-
-    webhooks.emit(conn.orgId, 'voucher.created', {
-      voucher: b.tallyGuid ?? null, draft: id, party: d.party,
-      amountPaise: Number(d.amount_paise), createdIn: 'munim',
-    });
 
     return { recorded: true, posted: true };
   }

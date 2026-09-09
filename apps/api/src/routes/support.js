@@ -45,9 +45,7 @@ const PRIORITIES = {
  */
 const RESPONSE_HOURS = {
   trial: { urgent: 24, high: 24, normal: 48, low: 72 },
-  basic: { urgent: 8, high: 12, normal: 24, low: 48 },
-  pro: { urgent: 4, high: 8, normal: 12, low: 24 },
-  enterprise: { urgent: 1, high: 4, normal: 8, low: 12 },
+  standard: { urgent: 4, high: 8, normal: 12, low: 24 },
   internal: { urgent: 1, high: 1, normal: 1, low: 1 },
 };
 

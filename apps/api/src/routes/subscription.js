@@ -166,10 +166,6 @@ async function preview(ctx) {
   const term = ctx.body?.term ?? ctx.url.searchParams.get('term') ?? 'monthly';
 
   if (!plans.PLANS[planKey] || planKey === 'internal') throw bad('BAD_PLAN', 'No such plan.');
-  if (planKey === 'enterprise') {
-    return { quoted: true, message: 'Enterprise is priced per business. Talk to us.' };
-  }
-
   const coupon = await couponFor(ctx.body?.coupon ?? ctx.url.searchParams.get('coupon'), planKey);
   const { rows: org } = await query('SELECT * FROM orgs WHERE id = $1', [s.org.id]);
   const sub = await current(s.org.id);
@@ -261,11 +257,6 @@ async function subscribe(ctx) {
   const planKey = String(ctx.body?.plan ?? '');
   const term = ctx.body?.term === 'yearly' ? 'yearly' : 'monthly';
   if (!plans.PLANS[planKey] || planKey === 'internal') throw bad('BAD_PLAN', 'No such plan.');
-  if (planKey === 'enterprise') {
-    throw bad('TALK_TO_US', 'Enterprise is priced per business. Talk to us and we '
-                          + 'will set it up for you.');
-  }
-
   const coupon = await couponFor(ctx.body?.coupon, planKey);
   const sub = await current(s.org.id);
   const price = priceFor(planKey, term);

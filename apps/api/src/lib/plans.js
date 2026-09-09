@@ -20,84 +20,54 @@
  * A one-shop trader has one Tally on one counter PC and two or three people
  * looking at the numbers. A distributor runs three or four companies and a
  * dozen staff. The tiers follow that shape rather than a generic SaaS ladder,
- * which is why "companies" and "connectors" separate the plans while storage,
- * the usual SaaS lever, barely moves: accounting rows are small.
+ * which is why "companies" and "connectors" are the numbers that matter:
+ * accounting rows are small, so storage never was the interesting lever.
  */
 const PLANS = {
+  /*
+   * One plan. Munim is sold to Indian SMBs at a single price, so a ladder of
+   * tiers would be three quarters of a pricing page nobody reads and three
+   * quarters of a quota matrix nobody tests. The limits below are the ones
+   * that protect the service, not ones designed to push an upgrade.
+   */
+  standard: {
+    label: 'Munim',
+    pricePaise: 1000000,          // Rs 10,000 a month
+    order: 1,
+    blurb: 'Every company, every report, every device. One price.',
+    limits: {
+      companies: null, users: null, connectors: null, devicesPerUser: 5,
+      whatsappPerMonth: null, smsPerMonth: null,
+      eInvoicesPerMonth: null, eWayBillsPerMonth: null,
+    },
+    features: {
+      dashboard: true, outstanding: true, parties: true, reports: true,
+      statements: true, stock: true, reminders: true, multiCompany: true,
+      export: true,
+    },
+  },
+
+  /*
+   * Still here, still not listed: an account has to be on something between
+   * signing up and paying, and giving that state its own row keeps the trial
+   * out of every "is this a real customer" query.
+   */
   trial: {
     label: 'Free trial',
     pricePaise: 0,
     days: 14,
     order: 0,
-    blurb: 'Everything in Pro, for a fortnight, with no card.',
+    hidden: true,
+    blurb: 'The whole product, for a fortnight, with no card.',
     limits: {
       companies: 2, users: 3, connectors: 1, devicesPerUser: 2,
-      storageMb: 200, backupKeep: 3, backupRetentionDays: 14,
       whatsappPerMonth: 50, smsPerMonth: 0,
       eInvoicesPerMonth: 0, eWayBillsPerMonth: 0,
-      apiCallsPerDay: 0,
     },
     features: {
       dashboard: true, outstanding: true, parties: true, reports: true,
       statements: true, stock: true, reminders: true, multiCompany: true,
-      export: true, api: false,
-    },
-  },
-
-  basic: {
-    label: 'Basic',
-    pricePaise: 49900,            // ₹499 a month
-    order: 1,
-    blurb: 'One shop, one Tally, the numbers on your phone.',
-    limits: {
-      companies: 1, users: 3, connectors: 1, devicesPerUser: 2,
-      storageMb: 500, backupKeep: 5, backupRetentionDays: 30,
-      whatsappPerMonth: 100, smsPerMonth: 0,
-      eInvoicesPerMonth: 0, eWayBillsPerMonth: 0,
-      apiCallsPerDay: 0,
-    },
-    features: {
-      dashboard: true, outstanding: true, parties: true, reports: true,
-      statements: true, stock: true, reminders: true, multiCompany: false,
-      export: false, api: false,
-    },
-  },
-
-  pro: {
-    label: 'Pro',
-    pricePaise: 149900,           // ₹1,499 a month
-    order: 2,
-    blurb: 'Several books, a team, and everything exportable.',
-    limits: {
-      companies: 5, users: 15, connectors: 3, devicesPerUser: 3,
-      storageMb: 5000, backupKeep: 30, backupRetentionDays: 180,
-      whatsappPerMonth: 1000, smsPerMonth: 500,
-      eInvoicesPerMonth: 500, eWayBillsPerMonth: 500,
-      apiCallsPerDay: 5000,
-    },
-    features: {
-      dashboard: true, outstanding: true, parties: true, reports: true,
-      statements: true, stock: true, reminders: true, multiCompany: true,
-      export: true, api: true,
-    },
-  },
-
-  enterprise: {
-    label: 'Enterprise',
-    pricePaise: 0,                // quoted, not listed
-    order: 3,
-    blurb: 'Many companies, many branches, and a number to call.',
-    limits: {
-      companies: null, users: null, connectors: null, devicesPerUser: 5,
-      storageMb: 50000, backupKeep: 90, backupRetentionDays: 365,
-      whatsappPerMonth: null, smsPerMonth: null,
-      eInvoicesPerMonth: null, eWayBillsPerMonth: null,
-      apiCallsPerDay: 50000,
-    },
-    features: {
-      dashboard: true, outstanding: true, parties: true, reports: true,
-      statements: true, stock: true, reminders: true, multiCompany: true,
-      export: true, api: true,
+      export: true,
     },
   },
 
@@ -113,18 +83,16 @@ const PLANS = {
     pricePaise: 0,
     order: 99,
     hidden: true,
-    blurb: 'Munim’s own account.',
+    blurb: 'Munim\u2019s own account.',
     limits: {
       companies: null, users: null, connectors: null, devicesPerUser: 10,
-      storageMb: null, backupKeep: 90, backupRetentionDays: 365,
       whatsappPerMonth: null, smsPerMonth: null,
       eInvoicesPerMonth: null, eWayBillsPerMonth: null,
-      apiCallsPerDay: null,
     },
     features: {
       dashboard: true, outstanding: true, parties: true, reports: true,
       statements: true, stock: true, reminders: true, multiCompany: true,
-      export: true, api: true,
+      export: true,
     },
   },
 };
@@ -144,14 +112,10 @@ const LIMITS = {
   users:               { label: 'People',              noun: 'people',          one: 'person',         unit: 'users' },
   connectors:          { label: 'Tally computers',     noun: 'Tally computers', one: 'Tally computer', unit: 'computers' },
   devicesPerUser:      { label: 'Devices per person',  noun: 'devices each',    one: 'device each',    unit: 'devices' },
-  storageMb:           { label: 'Storage',             noun: 'MB of storage',   one: 'MB of storage',  unit: 'MB' },
-  backupKeep:          { label: 'Backups kept',        noun: 'backups',         one: 'backup',         unit: 'backups' },
-  backupRetentionDays: { label: 'Backup retention',    noun: 'days of history', one: 'day of history', unit: 'days' },
   whatsappPerMonth:    { label: 'WhatsApp messages',   noun: 'WhatsApp messages', one: 'WhatsApp message', unit: 'a month', monthly: true },
   smsPerMonth:         { label: 'SMS',                 noun: 'SMS',             one: 'SMS',            unit: 'a month', monthly: true },
   eInvoicesPerMonth:   { label: 'E-Invoices',          noun: 'E-Invoices',      one: 'E-Invoice',      unit: 'a month', monthly: true },
   eWayBillsPerMonth:   { label: 'E-Way Bills',         noun: 'E-Way Bills',     one: 'E-Way Bill',     unit: 'a month', monthly: true },
-  apiCallsPerDay:      { label: 'API calls',           noun: 'API calls',       one: 'API call',       unit: 'a day',   daily: true },
 };
 
 const plan = (key) => PLANS[key] ?? PLANS.trial;
@@ -167,7 +131,7 @@ const catalogue = () =>
       pricePaise: p.pricePaise,
       blurb: p.blurb,
       days: p.days ?? null,
-      quoted: key === 'enterprise',
+      quoted: false,
       limits: p.limits,
       features: p.features,
     }));

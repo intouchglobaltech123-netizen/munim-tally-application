@@ -12,6 +12,7 @@ import {
   Badge, Button, Card, Empty, ErrorNote, PageTitle, SectionTitle, Spinner,
 } from '../../components/ui';
 import { shareOnWhatsApp, shareByEmail, copyText } from '../../lib/share';
+import Filters, { type FilterSpec, type FilterValues, matches } from '../../components/Filters';
 import {
   MessageCircle, Mail, Copy, Check, X, BellOff, Info, Clock3, CheckCircle2,
   Phone, Settings2, History, AlertTriangle,
@@ -43,6 +44,53 @@ export default function RemindersPage() {
   const work = useApi<ReminderWorklist>(base && `${base}/reminders`, [company?.tallyGuid]);
   const hist = useApi<ReminderHistory>('/v1/reminders/history?limit=100', []);
   const cfg = useApi<ReminderConfig>('/v1/reminders/config', []);
+
+  const [wf, setWf] = useState<FilterValues>({});
+  const [hf, setHf] = useState<FilterValues>({});
+
+  /*
+   * The worklist and the history get their own strips.
+   *
+   * They look similar but answer opposite questions: one is "who do I chase
+   * this morning", the other is "what did we already say to this party". A
+   * single shared strip would carry the wrong controls for whichever tab you
+   * were not on.
+   */
+  const rules = [...new Set((work.data?.worklist ?? []).map((j) => j.rule.name))];
+  const workSpecs: FilterSpec<ReminderJob>[] = [
+    { key: 'q', label: 'Party', kind: 'search', on: (j) => j.party,
+      placeholder: 'Search party…' },
+    { key: 'amt', label: 'Amount due', kind: 'amountRange', on: (j) => j.amountPaise },
+    { key: 'reachable', label: 'Reachable only', kind: 'toggle', on: (j) => j.reachable },
+    { key: 'fresh', label: 'Not chased before', kind: 'toggle', on: (j) => j.remindedBefore === 0 },
+    { key: 'rule', label: 'Rule', kind: 'select', on: (j) => j.rule.name,
+      options: rules.map((r) => ({ value: r, label: r })) },
+    { key: 'over', label: 'How overdue', kind: 'select',
+      on: (j) => (j.daysOverdue > 90 ? '90+' : j.daysOverdue > 60 ? '61-90'
+                : j.daysOverdue > 30 ? '31-60' : '0-30'),
+      options: [
+        { value: '0-30', label: 'Up to 30 days' }, { value: '31-60', label: '31 to 60 days' },
+        { value: '61-90', label: '61 to 90 days' }, { value: '90+', label: 'Over 90 days' },
+      ] },
+  ];
+
+  type HistRow = ReminderHistory['reminders'][number];
+  const histSpecs: FilterSpec<HistRow>[] = [
+    { key: 'q', label: 'Party', kind: 'search', on: (r) => r.party,
+      placeholder: 'Search party…' },
+    { key: 'status', label: 'Outcome', kind: 'select', on: (r) => r.status,
+      options: [
+        { value: 'sent', label: 'Sent' }, { value: 'handed', label: 'Handed over' },
+        { value: 'skipped', label: 'Skipped' },
+      ] },
+    { key: 'channel', label: 'Channel', kind: 'select', on: (r) => r.channel,
+      options: [
+        { value: 'whatsapp', label: 'WhatsApp' }, { value: 'sms', label: 'SMS' },
+        { value: 'email', label: 'Email' },
+      ] },
+    { key: 'amt', label: 'Amount', kind: 'amountRange', on: (r) => r.amountPaise },
+    { key: 'at', label: 'Sent on', kind: 'dateRange', on: (r) => r.at },
+  ];
 
   async function record(job: ReminderJob, status: string) {
     if (!base) return;
@@ -111,8 +159,10 @@ export default function RemindersPage() {
                 </div>
               )}
 
+              <Filters specs={workSpecs} values={wf} onChange={setWf} />
+
               <div className="space-y-3">
-                {work.data.worklist.map((job) => (
+                {work.data.worklist.filter((j) => matches(j, workSpecs, wf)).map((job) => (
                   <Card key={job.party} className={done[job.party] ? 'opacity-60' : ''}>
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -212,10 +262,12 @@ export default function RemindersPage() {
               <Empty title="Nothing chased yet" icon={History}
                 hint="Reminders you send appear here." />
             ) : (
+              <>
+              <Filters specs={histSpecs} values={hf} onChange={setHf} />
               <Card>
                 <table className="w-full text-sm">
                   <tbody>
-                    {hist.data.reminders.map((r) => (
+                    {hist.data.reminders.filter((r) => matches(r, histSpecs, hf)).map((r) => (
                       <tr key={r.id} className="border-b border-slate-50 last:border-0">
                         <td className="py-2 pr-3">
                           <div className="font-medium text-slate-800">{r.party}</div>
@@ -238,6 +290,7 @@ export default function RemindersPage() {
                   </tbody>
                 </table>
               </Card>
+              </>
             )}
           </>
         )

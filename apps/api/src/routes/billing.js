@@ -42,8 +42,7 @@ async function overview(ctx) {
      * themselves into a limit they are already over, and the resulting screen
      * says 140% of your allowance with no way forward.
      */
-    upgrades: ladder.filter((p) => p.order > current.order || p.key === 'enterprise')
-      .filter((p) => p.key !== org.plan),
+    upgrades: ladder.filter((p) => p.key !== org.plan),
     allPlans: ladder,
     note: 'Limits are counted from your data, not from a running total, so what '
         + 'you see here is what is actually there.',

@@ -59,7 +59,6 @@ const books = require('./routes/books');
 const reminders = require('./routes/reminders');
 const share = require('./routes/share');
 const views = require('./routes/views');
-const backup = require('./routes/backup');
 const notifications = require('./routes/notifications');
 const search = require('./routes/search');
 const audit = require('./routes/audit');
@@ -71,12 +70,8 @@ const kpi = require('./routes/kpi');
 const pulse = require('./routes/pulse');
 const businesses = require('./routes/businesses');
 const preferences = require('./routes/preferences');
-const developer = require('./routes/developer');
 const support = require('./routes/support');
 const entry = require('./routes/entry');
-const partners = require('./routes/partners');
-const publicapi = require('./routes/publicapi');
-const apikeys = require('./lib/apikeys');
 const { ipPrefix } = require('./lib/audit');
 
 const PORT = Number(process.env.PORT || 8080);
@@ -135,10 +130,6 @@ const routes = {
   'GET  /v1/reminders/history': reminders.history,
   'GET  /v1/share/templates': share.templates,
   'GET  /v1/share/log': share.log,
-  'GET  /v1/partner': partners.dashboard,
-  'POST /v1/partner/apply': partners.apply,
-  'POST /v1/partner/leads': partners.saveLead,
-  'GET  /v1/admin/partners': partners.list,
 
   'GET  /v1/connector/outbox': entry.outbox,
   'PUT  /v1/settings/writes': entry.setWrites,
@@ -148,9 +139,6 @@ const routes = {
   'POST /v1/tickets': support.createTicket,
   'GET  /v1/admin/support': support.queue,
 
-  'GET  /v1/developer': developer.overview,
-  'POST /v1/developer/keys': developer.createKey,
-  'POST /v1/developer/webhooks': developer.createWebhook,
 
   'GET  /v1/businesses': businesses.list,
 
@@ -184,9 +172,6 @@ const routes = {
   'POST /v1/notifications/rules': notifications.setRule,
   'PATCH /v1/notifications/mine': notifications.setMine,
 
-  'GET  /v1/backups': backup.list,
-  'POST /v1/backups/restore': backup.restore,
-  'PATCH /v1/backups/settings': backup.settings,
 
   'GET  /v1/views': views.list,
   'POST /v1/views': views.create,
@@ -237,20 +222,14 @@ const SHARE_RECORD = /^\/v1\/companies\/([^/]+)\/share\/record$/;
 const SHARE_TEMPLATE = /^\/v1\/share\/templates\/([0-9a-f-]{36})$/;
 const VIEW_ONE = /^\/v1\/views\/([0-9a-f-]{36})$/;
 const AUDIT_ENTITY = /^\/v1\/audit\/([a-z]+)\/(.+)$/;
-const PARTNER_LEAD = /^\/v1\/partner\/leads\/([0-9a-f-]{36})$/;
-const ADMIN_PARTNER = /^\/v1\/admin\/partners\/([0-9a-f-]{36})(?:\/(approve|payout))?$/;
 const BUSINESS_REGROUP = /^\/v1\/businesses\/companies\/(.+)$/;
 const ENTRY_NEW = /^\/v1\/companies\/([^/]+)\/entries$/;
 const ENTRY_ONE = /^\/v1\/entries\/([0-9a-f-]{36})(?:\/(send|cancel))?$/;
 const OUTBOX_RESULT = /^\/v1\/connector\/outbox\/([0-9a-f-]{36})$/;
 const TICKET_ONE = /^\/v1\/tickets\/([0-9a-f-]{36})(?:\/(reply|status|rate|files))?$/;
 const TICKET_FILE = /^\/v1\/tickets\/([0-9a-f-]{36})\/files\/([0-9a-f-]{36})$/;
-const API_KEY_ONE = /^\/v1\/developer\/keys\/([0-9a-f-]{36})$/;
-const WEBHOOK_ONE = /^\/v1\/developer\/webhooks\/([0-9a-f-]{36})(?:\/(test|deliveries))?$/;
 const BILLING_INVOICE = /^\/v1\/billing\/invoices\/([0-9a-f-]{36})$/;
 const TRANSFER_ONE = /^\/v1\/account\/transfer\/([0-9a-f-]{36})\/(accept|decline|cancel)$/;
-const BACKUP_NEW = /^\/v1\/companies\/([^/]+)\/backup$/;
-const BACKUP_FILE = /^\/v1\/backups\/([0-9a-f-]{36})\/(download|verify)$/;
 const REMINDER_OPTOUT = /^\/v1\/companies\/([^/]+)\/reminders\/party\/(.+)$/;
 const REMINDER_RULE = /^\/v1\/reminders\/rules\/([0-9a-f-]{36})$/;
 const REMINDER_TEMPLATE = /^\/v1\/reminders\/templates\/([0-9a-f-]{36})$/;
@@ -388,21 +367,15 @@ const server = http.createServer(async (req, res) => {
 
     // Resolve both credentials once. A route then asks for the one it needs;
     // a device token can never satisfy requireUser, and vice versa.
-    const [session, connector, apiKey] = await Promise.all([
+    const [session, connector] = await Promise.all([
       auth.sessionFor(token),
       auth.connectorFor(token),
-      /*
-       * Resolved for every request, not only for /api/ ones, so that a key sent
-       * to an app route is recognised and refused clearly rather than being
-       * treated as an anonymous caller and answered with a confusing 401.
-       */
-      apikeys.resolve(token),
     ]);
 
     // Parse the body lazily. Ingest sends NDJSON, not JSON - parsing eagerly
     // rejected every batch with BAD_JSON before the route ever ran.
     const ctx = {
-      req, res, url, token, session, connector, apiKey, raw,
+      req, res, url, token, session, connector, raw,
       headers: req.headers,
       get body() {
         if (this._body === undefined) {
@@ -432,48 +405,6 @@ const server = http.createServer(async (req, res) => {
     }
     res.setHeader('X-RateLimit-Remaining', String(limit.remaining));
 
-    /*
-     * The public API is dispatched first and separately.
-     *
-     * It has its own auth (a key, not a session), its own versioned paths, and
-     * its own log. Threading it through the app's route table would mean every
-     * app route having to think about API keys, which is how one of them
-     * eventually forgets.
-     */
-    if (url.pathname === '/api' || url.pathname === '/api/v1') {
-      // A local, not the outer `result`: that is declared further down, so
-      // assigning to it here reaches it in its temporal dead zone. This block
-      // sends and returns on its own and never needed it.
-      const docs = publicapi.describe();
-      send(res, 200, docs);
-      log(req, url, 200, started);
-      return;
-    }
-
-    if (url.pathname.startsWith('/api/')) {
-      const apiStarted = Date.now();
-      try {
-        const out = await publicapi.handle(ctx, req.method, url.pathname);
-        send(res, 200, out);
-        log(req, url, 200, started);
-        await apikeys.record(apiKey, {
-          method: req.method, path: url.pathname, status: 200,
-          ms: Date.now() - apiStarted, ipPrefix: ipPrefix(ctx),
-        });
-      } catch (e) {
-        const status = e instanceof HttpError ? e.status : 500;
-        if (status === 500) console.error(`  API ${req.method} ${url.pathname} ->`, e);
-        fail(res, status, e.code ?? 'INTERNAL',
-          status === 500 ? 'Something went wrong on our side.' : e.message);
-        log(req, url, status, started);
-        await apikeys.record(apiKey, {
-          method: req.method, path: url.pathname, status,
-          ms: Date.now() - apiStarted, ipPrefix: ipPrefix(ctx), error: e.message,
-        });
-      }
-      return;
-    }
-
     const install = url.pathname.match(INSTALL_SCRIPT);
     const view = url.pathname.match(COMPANY_VIEW);
     const revoke = url.pathname.match(DEVICE_REVOKE);
@@ -502,8 +433,6 @@ const server = http.createServer(async (req, res) => {
     const shareTemplate = url.pathname.match(SHARE_TEMPLATE);
     const viewOne = url.pathname.match(VIEW_ONE);
     const auditEntity = url.pathname.match(AUDIT_ENTITY);
-    const backupNew = url.pathname.match(BACKUP_NEW);
-    const backupFile = url.pathname.match(BACKUP_FILE);
     const remOptOut = url.pathname.match(REMINDER_OPTOUT);
     const remRule = url.pathname.match(REMINDER_RULE);
     const remTemplate = url.pathname.match(REMINDER_TEMPLATE);
@@ -512,12 +441,8 @@ const server = http.createServer(async (req, res) => {
     const transferOne = url.pathname.match(TRANSFER_ONE);
 
     const billingInvoice = url.pathname.match(BILLING_INVOICE);
-    const apiKeyOne = url.pathname.match(API_KEY_ONE);
-    const webhookOne = url.pathname.match(WEBHOOK_ONE);
 
     const ticketOne = url.pathname.match(TICKET_ONE);
-    const partnerLead = url.pathname.match(PARTNER_LEAD);
-    const adminPartner = url.pathname.match(ADMIN_PARTNER);
 
     const ticketFile = url.pathname.match(TICKET_FILE);
     const entryNew = url.pathname.match(ENTRY_NEW);
@@ -544,16 +469,6 @@ const server = http.createServer(async (req, res) => {
       result = await support.file(ctx, ticketFile[1], ticketFile[2]);
     } else if (ticketOne && ticketOne[2] === 'files' && req.method === 'POST') {
       result = await support.attach(ctx, ticketOne[1]);
-    } else if (partnerLead && req.method === 'PATCH') {
-      result = await partners.saveLead(ctx, partnerLead[1]);
-    } else if (partnerLead && req.method === 'DELETE') {
-      result = await partners.deleteLead(ctx, partnerLead[1]);
-    } else if (adminPartner && adminPartner[2] === 'approve' && req.method === 'POST') {
-      result = await partners.approveCommissions(ctx, adminPartner[1]);
-    } else if (adminPartner && adminPartner[2] === 'payout' && req.method === 'POST') {
-      result = await partners.payout(ctx, adminPartner[1]);
-    } else if (adminPartner && !adminPartner[2] && req.method === 'PATCH') {
-      result = await partners.update(ctx, adminPartner[1]);
     } else if (ticketOne && !ticketOne[2] && req.method === 'GET') {
       result = await support.ticket(ctx, ticketOne[1]);
     } else if (ticketOne && ticketOne[2] === 'reply' && req.method === 'POST') {
@@ -562,28 +477,12 @@ const server = http.createServer(async (req, res) => {
       result = await support.setStatus(ctx, ticketOne[1]);
     } else if (ticketOne && ticketOne[2] === 'rate' && req.method === 'POST') {
       result = await support.rate(ctx, ticketOne[1]);
-    } else if (apiKeyOne && req.method === 'DELETE') {
-      result = await developer.revokeKey(ctx, apiKeyOne[1]);
-    } else if (webhookOne && webhookOne[2] === 'test' && req.method === 'POST') {
-      result = await developer.testWebhook(ctx, webhookOne[1]);
-    } else if (webhookOne && webhookOne[2] === 'deliveries' && req.method === 'GET') {
-      result = await developer.deliveries(ctx, webhookOne[1]);
-    } else if (webhookOne && !webhookOne[2] && req.method === 'PATCH') {
-      result = await developer.updateWebhook(ctx, webhookOne[1]);
-    } else if (webhookOne && !webhookOne[2] && req.method === 'DELETE') {
-      result = await developer.deleteWebhook(ctx, webhookOne[1]);
     } else if (billingInvoice && req.method === 'GET') {
       result = await subscription.invoice(ctx, billingInvoice[1]);
     } else if (transferOne && req.method === 'POST') {
       result = await account.settleTransfer(ctx, transferOne[1], transferOne[2]);
     } else if (auditEntity && req.method === 'GET') {
       result = await audit.forEntity(ctx, auditEntity[1], decodeURIComponent(auditEntity[2]));
-    } else if (backupNew && req.method === 'POST') {
-      result = await backup.create(ctx, decodeURIComponent(backupNew[1]));
-    } else if (backupFile && req.method === 'GET') {
-      result = backupFile[2] === 'download'
-        ? await backup.download(ctx, backupFile[1])
-        : await backup.verify(ctx, backupFile[1]);
     } else if (viewOne && req.method === 'PATCH') {
       result = await views.update(ctx, viewOne[1]);
     } else if (viewOne && req.method === 'DELETE') {

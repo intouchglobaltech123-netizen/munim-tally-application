@@ -791,20 +791,8 @@ export type SavedView = {
   updatedAt: string;
 };
 
-// --- Backups
 
-export type Backup = {
-  id: string; companyName: string; kind: 'full' | 'incremental';
-  trigger: string; status: string; sizeBytes: number; rawBytes: number;
-  checksum: string; counts: Record<string, number>; createdAt: string;
-  error: string; by: string; available: boolean;
-};
 
-export type BackupList = {
-  backups: Backup[];
-  settings: { keep: number; schedule: string; lastAt: string | null };
-  note: string;
-};
 
 // --- Notifications
 
@@ -965,8 +953,6 @@ export type AdminMetrics = {
                   queueDepth: number; onlinePercent: number };
     sync: { runs24h: number; ok24h: number; failed24h: number;
             successPercent: number; averageMs: number };
-    backups: { ok7d: number; failed7d: number; successPercent: number;
-               storedMb: number; encrypted: boolean };
     database: { latencyMs: number; sizeMb: number; vouchers: number };
     api: {
       windowMinutes: number; samples: number; avgMs: number; p50Ms: number;
@@ -990,7 +976,7 @@ export type AdminMetrics = {
                  emails: number; shares: number };
     documents: { pdfsAndPrints: number; csvExports: number;
                  reportsViewedSinceRestart: number };
-    data: { backups: number; restores: number; savedViews: number; pinnedReports: number };
+    data: { savedViews: number; pinnedReports: number };
     compliance: { eInvoices: number; eWayBills: number; note: string };
   };
 };
@@ -1085,35 +1071,6 @@ export type Preferences = {
   note: string;
 };
 
-// --- Developer console
-
-export type ApiKeyRow = {
-  id: string; name: string; prefix: string; scopes: string[];
-  company: string | null; createdAt: string; createdBy: string;
-  lastUsedAt: string | null; lastIp: string; expiresAt: string | null;
-  revokedAt: string | null; calls: number; status: string;
-};
-
-export type WebhookRow = {
-  id: string; url: string; events: string[]; active: boolean;
-  lastStatus: number | null; lastError: string; lastAt: string | null;
-  failures: number; disabledAt: string | null; secretHint: string;
-};
-
-export type Developer = {
-  enabled: boolean;
-  disabledNote: string;
-  keys: ApiKeyRow[];
-  webhooks: WebhookRow[];
-  usage: { calls24h: number; errors24h: number; averageMs: number;
-           limitPerDay: number | null };
-  recentCalls: { method: string; path: string; status: number;
-                 duration_ms: number; at: string; error: string }[];
-  scopes: { key: string; label: string }[];
-  events: { key: string; label: string }[];
-  baseUrl: string;
-  note: string;
-};
 
 // --- Support
 
@@ -1158,30 +1115,6 @@ export type TicketDetail = {
 
 // --- Partner programme
 
-export type PartnerDashboard = {
-  partner: {
-    id?: string; name: string; code: string; status: string;
-    commissionPercent?: number; commissionMonths?: number | null;
-    commissionNote?: string; referralLink?: string;
-  } | null;
-  canApply?: boolean;
-  message?: string;
-  summary?: {
-    customers: number; payingCustomers: number; leads: number;
-    pendingPaise: number; approvedPaise: number; paidPaise: number;
-    reversedPaise: number;
-    pendingLabel: string; approvedLabel: string; paidLabel: string; dueLabel: string;
-  };
-  customers?: { id: string; name: string; plan: string; subscription: string;
-                introducedAt: string; paidLabel: string }[];
-  leads?: { id: string; business: string; contact_name: string; phone: string;
-            email: string; city: string; status: string; notes: string;
-            created_at: string }[];
-  commissions?: { id: string; customer: string; amountLabel: string;
-                  ratePercent: number; status: string; earnedAt: string }[];
-  payouts?: { id: string; amountLabel: string; lines: number; status: string;
-              reference: string; created_at: string }[];
-};
 
 // --- Creating vouchers
 

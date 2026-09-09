@@ -32,7 +32,7 @@ async function fixture() {
 const ctxFor = (f, body = {}) => ({
   session: {
     org: { id: f.orgId, name: 'Rem Co',
-           features: { reminders: true }, plan: 'pro' },
+           features: { reminders: true }, plan: 'standard' },
     user: { id: f.userId, role: 'owner', roleId: null },
   },
   url: new URL('http://x/'), body,

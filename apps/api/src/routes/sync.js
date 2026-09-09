@@ -1,7 +1,6 @@
 'use strict';
 const { query } = require('../db');
 const audit = require('../lib/audit');
-const webhooks = require('../lib/webhooks');
 const auth = require('../lib/auth');
 const { HttpError } = require('../lib/http');
 
@@ -76,16 +75,7 @@ async function reportRun(ctx) {
    * heartbeat would drown a receiver in "nothing happened".
    */
   if (!ok) {
-    webhooks.emit(conn.orgId, 'sync.failed', {
-      machine: conn.machineName ?? '', error, kind: classify(error),
-    });
   } else if (Number(b.records) > 0) {
-    webhooks.emit(conn.orgId, 'sync.completed', {
-      records: Number(b.records) || 0,
-      vouchers: Number(b.vouchers) || 0,
-      masters: Number(b.masters) || 0,
-      durationMs: Math.max(0, Number(b.durationMs) || 0),
-    });
   }
 
   return { recorded: true };
@@ -214,10 +204,6 @@ async function reconcile(ctx) {
      */
     if (kind === 'vouchers' && extra.length <= 25) {
       for (const v of extra) {
-        webhooks.emit(conn.orgId, 'voucher.deleted', {
-          voucher: v.guid, number: v.vch_no, party: v.party,
-          amountPaise: Math.abs(Number(v.amount_paise) || 0),
-        });
         await audit.record(ctxAsTally, 'voucher.deleted', {
           companyId,
           entityId: v.guid,

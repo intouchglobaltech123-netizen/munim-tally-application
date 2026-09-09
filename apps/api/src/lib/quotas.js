@@ -58,9 +58,6 @@ async function usageFor(orgId) {
       (SELECT count(*) FROM connectors WHERE org_id = $1 AND revoked_at IS NULL) AS connectors,
       (SELECT count(*) FROM sessions s JOIN users u ON u.id = s.user_id
         WHERE u.org_id = $1 AND s.revoked_at IS NULL)                            AS devices,
-      (SELECT COALESCE(sum(size_bytes), 0) FROM backups
-        WHERE org_id = $1 AND payload IS NOT NULL)                               AS storage_bytes,
-      (SELECT count(*) FROM backups WHERE org_id = $1 AND payload IS NOT NULL)   AS backups,
       -- Counted from handed_off_at, not from the row existing: a reminder that
       -- was only ever drafted has not spent anybody's allowance. Munim hands
       -- the message to WhatsApp rather than sending it, and that hand-off is
@@ -85,8 +82,6 @@ async function usageFor(orgId) {
     users: Number(r.users),
     connectors: Number(r.connectors),
     devices: Number(r.devices),
-    storageMb: Math.round(Number(r.storage_bytes) / 1048576 * 10) / 10,
-    backupKeep: Number(r.backups),
     whatsappPerMonth: Number(r.whatsapp_month),
     smsPerMonth: Number(r.sms_month),
     // Not yet issued by Munim - both need write access to Tally and a paid GSP

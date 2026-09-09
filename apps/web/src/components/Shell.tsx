@@ -125,7 +125,6 @@ const CUSTOMER_NAV: NavItem[] = [
     label: 'Safety', icon: ShieldCheck,
     children: [
       { href: '/security', label: 'Security' },
-      { href: '/backup', label: 'Backup' },
       { href: '/audit', label: 'Audit log' },
       { href: '/account', label: 'Account' },
     ],
@@ -134,8 +133,6 @@ const CUSTOMER_NAV: NavItem[] = [
     label: 'Account', icon: CreditCard,
     children: [
       { href: '/billing', label: 'Plan & billing' },
-      { href: '/developer', label: 'Developers' },
-      { href: '/partner', label: 'Partner programme' },
       { href: '/help', label: 'Help' },
     ],
   },

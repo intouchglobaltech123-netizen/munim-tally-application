@@ -20,7 +20,7 @@ after(async () => { for (const id of orgs) await query('DELETE FROM orgs WHERE i
 
 async function org() {
   const { rows } = await query(
-    `INSERT INTO orgs (name, plan) VALUES ('biz-test','basic') RETURNING *`);
+    `INSERT INTO orgs (name, plan) VALUES ('biz-test','standard') RETURNING *`);
   orgs.push(rows[0].id);
   return rows[0].id;
 }
@@ -146,8 +146,8 @@ test('a missing start date gives no label rather than a wrong one', () => {
 
 test('three years of one shop count as ONE company against the plan', async () => {
   /*
-   * The reason this exists. Counting files meant a customer on Basic - one
-   * company - was over their limit the day they connected, and the product
+   * The reason this exists. Counting files meant a customer on a one-company
+   * ceiling was over their limit the day they connected, and the product
    * stopped working for one of the most ordinary setups in the country.
    */
   const o = await org();
@@ -160,17 +160,23 @@ test('three years of one shop count as ONE company against the plan', async () =
   assert.equal(usage.companyFiles, 3, 'and the file count is still reported');
 
   /*
-   * And they are within the Basic allowance rather than over it.
+   * And they fit inside a one-company ceiling rather than blowing through it.
+   *
+   * Asserted against an explicit override rather than the plan: the sold plan
+   * has no company limit, which would make this pass for the wrong reason and
+   * keep passing if grouping broke. An override of 1 is the tightest ceiling
+   * the product can express, and three years of one shop must still fit.
    *
    * Not asserted through assertWithin, which is a BEFORE-ADDING check and
-   * correctly refuses a second business on a one-business plan. What matters
+   * correctly refuses a second business on a one-business ceiling. What matters
    * here is that three years of one shop does not by itself exceed the limit -
    * before this change it counted as three and did.
    */
   const plans = require('../src/lib/plans');
-  assert.ok(usage.companies <= plans.limitFor({ plan: 'basic' }, 'companies'),
-    `${usage.companies} businesses against a limit of `
-    + `${plans.limitFor({ plan: 'basic' }, 'companies')}`);
+  const ceiling = plans.limitFor({ plan: 'standard', limits: { companies: 1 } }, 'companies');
+  assert.equal(ceiling, 1, 'the override is what is being tested against');
+  assert.ok(usage.companies <= ceiling,
+    `${usage.companies} businesses against a limit of ${ceiling}`);
 });
 
 test('two real businesses still count as two', async () => {

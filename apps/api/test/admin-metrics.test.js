@@ -49,11 +49,11 @@ test('ARR is twelve times MRR, and a yearly plan is divided not multiplied', asy
    * flattering arithmetic error available here.
    */
   const { rows: o } = await query(
-    `INSERT INTO orgs (name, plan) VALUES ('mrr-test','pro') RETURNING *`);
+    `INSERT INTO orgs (name, plan) VALUES ('mrr-test','standard') RETURNING *`);
   orgs.push(o[0].id);
   await query(
     `INSERT INTO subscriptions (org_id, plan, term, price_paise, status, current_until)
-     VALUES ($1,'pro','yearly',1499000,'active', now() + interval '365 days')`, [o[0].id]);
+     VALUES ($1,'standard','yearly',1499000,'active', now() + interval '365 days')`, [o[0].id]);
 
   const b = await admin.businessMetrics(adminCtx());
   assert.equal(b.revenue.arrPaise, b.revenue.mrrPaise * 12);
@@ -177,13 +177,13 @@ test('load is reported against core count', () => {
 
 test('the customer view leads with what support calls are about', async () => {
   const { rows: o } = await query(
-    `INSERT INTO orgs (name, plan) VALUES ('cust-test','pro') RETURNING *`);
+    `INSERT INTO orgs (name, plan) VALUES ('cust-test','standard') RETURNING *`);
   orgs.push(o[0].id);
   await query(`INSERT INTO companies (org_id, tally_guid, name)
                VALUES ($1,$2,'Books')`, [o[0].id, `c-${o[0].id}`]);
 
   const c = await admin.customer(adminCtx(), o[0].id);
-  assert.equal(c.account.planLabel, 'Pro');
+  assert.equal(c.account.planLabel, 'Munim');
   assert.ok('connectorOnline' in c.headline);
   assert.ok('lastSync' in c.headline);
   assert.ok(Array.isArray(c.headline.atLimit));
@@ -207,7 +207,7 @@ test('a ceiling can be raised and then cleared again', async () => {
    * bumped to 9 books during a trial kept 9 for ever.
    */
   const { rows: o } = await query(
-    `INSERT INTO orgs (name, plan) VALUES ('override-test','basic') RETURNING *`);
+    `INSERT INTO orgs (name, plan) VALUES ('override-test','standard') RETURNING *`);
   orgs.push(o[0].id);
 
   const raised = await misc.adminUpdateOrg(
@@ -218,12 +218,12 @@ test('a ceiling can be raised and then cleared again', async () => {
   const cleared = await misc.adminUpdateOrg(
     { ...adminCtx(), body: { maxCompanies: null } }, o[0].id);
   assert.equal(cleared.overrides.companies, null, 'the override was removed');
-  assert.equal(cleared.maxCompanies, 1, 'and the Basic plan decides again');
+  assert.equal(cleared.maxCompanies, null, 'and the plan decides again - it has no ceiling');
 });
 
 test('not mentioning a ceiling leaves it alone', async () => {
   const { rows: o } = await query(
-    `INSERT INTO orgs (name, plan, max_companies) VALUES ('untouched','basic',7) RETURNING *`);
+    `INSERT INTO orgs (name, plan, max_companies) VALUES ('untouched','standard',7) RETURNING *`);
   orgs.push(o[0].id);
 
   const r = await misc.adminUpdateOrg({ ...adminCtx(), body: { notes: 'hello' } }, o[0].id);
@@ -232,17 +232,17 @@ test('not mentioning a ceiling leaves it alone', async () => {
 
 test('an unlimited plan reports no ceiling rather than a number', async () => {
   const { rows: o } = await query(
-    `INSERT INTO orgs (name, plan) VALUES ('ent-test','enterprise') RETURNING *`);
+    `INSERT INTO orgs (name, plan) VALUES ('ent-test','standard') RETURNING *`);
   orgs.push(o[0].id);
   const list = await misc.adminOrgs(adminCtx());
   const row = list.orgs.find((x) => x.id === o[0].id);
   assert.equal(row.maxCompanies, null);
-  assert.equal(row.planLabel, 'Enterprise');
+  assert.equal(row.planLabel, 'Munim');
 });
 
 test('a plan the product does not sell is refused before it reaches the database', async () => {
   const { rows: o } = await query(
-    `INSERT INTO orgs (name, plan) VALUES ('badplan','basic') RETURNING *`);
+    `INSERT INTO orgs (name, plan) VALUES ('badplan','standard') RETURNING *`);
   orgs.push(o[0].id);
   await assert.rejects(
     () => misc.adminUpdateOrg({ ...adminCtx(), body: { plan: 'platinum' } }, o[0].id),

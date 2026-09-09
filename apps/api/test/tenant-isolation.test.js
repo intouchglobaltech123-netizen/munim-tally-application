@@ -38,17 +38,6 @@ const GLOBAL_TABLES = new Set([
   // A price list, not customer data: the same codes are offered to everybody.
   'coupons',
 
-  /*
-   * The partner programme is not tenant data.
-   *
-   * A partner is a business Munim sells THROUGH, not a customer whose books are
-   * being kept. Their rows are scoped by partner_id, which is checked by
-   * partners.test.js ("a partner sees only their own customers", "leads belong
-   * to the partner who created them"). Forcing an org_id on them would be
-   * meaningless: a partner has many customers, and one of their leads has no
-   * account at all yet - which is the whole point of tracking a lead.
-   */
-  'partners', 'partner_users', 'partner_leads', 'commissions', 'payouts',
 ]);
 
 /**
@@ -163,8 +152,6 @@ test('every tenant table can be traced back to an org', async () => {
     'pinned_reports',
     // Reached through their ticket, which is scoped.
     'ticket_messages', 'ticket_files',
-    // Reached through their webhook, which is scoped.
-    'webhook_deliveries',
   ]);
 
   const unreachable = [];
@@ -264,14 +251,4 @@ test('the audit log never crosses tenants', async () => {
   await record(ctxFor(a), 'user.disable', { entityName: 'Alpha secret' });
   const mine = await audit.list(ctxFor(b));
   assert.equal(mine.entries.length, 0);
-});
-
-test('a backup cannot be read by another tenant', async () => {
-  const a = await tenant('Alpha6');
-  const b = await tenant('Beta6');
-  const backup = require('../src/routes/backup');
-
-  const made = await backup.create(ctxFor(a), a.co.tally_guid);
-  await assert.rejects(() => backup.download(ctxFor(b), made.backup.id),
-    (e) => e.status === 404);
 });

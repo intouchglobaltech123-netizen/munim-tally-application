@@ -14,7 +14,7 @@ const support = require('../src/routes/support');
 const orgs = [];
 after(async () => { for (const id of orgs) await query('DELETE FROM orgs WHERE id = $1', [id]); });
 
-async function fixture(plan = 'pro') {
+async function fixture(plan = 'standard') {
   const { rows: o } = await query(
     `INSERT INTO orgs (name, plan) VALUES ('sup-test',$1) RETURNING *`, [plan]);
   orgs.push(o[0].id);
@@ -96,7 +96,7 @@ test('the reply target comes from the plan and is published', async () => {
   /*
    * An unpublished target is not a promise, it is an excuse.
    */
-  const pro = await fixture('pro');
+  const pro = await fixture('standard');
   const trial = await fixture('trial');
   const p = await support.help(ctxFor(pro));
   const t = await support.help(ctxFor(trial));
@@ -268,7 +268,7 @@ test('a stopped business is ahead of a feature request', async () => {
 });
 
 test('a missed response target is flagged', async () => {
-  const f = await fixture('pro');
+  const f = await fixture('standard');
   const made = await support.createTicket(ctxFor(f, {
     subject: 'Urgent problem here', body: 'Everything is stopped.', priority: 'urgent' }));
   await query(`UPDATE tickets SET created_at = now() - interval '2 days' WHERE id = $1`,

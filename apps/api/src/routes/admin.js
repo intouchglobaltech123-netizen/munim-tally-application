@@ -52,7 +52,7 @@ async function businessMetrics(ctx) {
         WHERE created_at > now() - interval '7 days')                   AS new_7d,
       (SELECT count(*) FROM orgs WHERE plan = 'trial')                 AS trial_accounts,
       (SELECT count(*) FROM orgs
-        WHERE plan IN ('basic','pro','enterprise'))                     AS paid_accounts,
+        WHERE plan = 'standard')                     AS paid_accounts,
       (SELECT count(*) FROM orgs WHERE delete_due_at IS NOT NULL)      AS closing,
       (SELECT count(*) FROM subscriptions
         WHERE status IN ('active','grace','past_due'))                  AS live_subs,
@@ -164,12 +164,6 @@ async function technicalMetrics(ctx) {
         WHERE started_at > now() - interval '24 hours' AND ok)           AS syncs_ok_24h,
       (SELECT COALESCE(avg(duration_ms), 0) FROM sync_runs
         WHERE started_at > now() - interval '24 hours' AND ok)           AS sync_avg_ms,
-      (SELECT count(*) FROM backups
-        WHERE created_at > now() - interval '7 days' AND status = 'ok')  AS backups_ok,
-      (SELECT count(*) FROM backups
-        WHERE created_at > now() - interval '7 days' AND status <> 'ok') AS backups_failed,
-      (SELECT COALESCE(sum(size_bytes), 0) FROM backups
-        WHERE payload IS NOT NULL)                                       AS backup_bytes,
       (SELECT count(*) FROM vouchers)                                    AS vouchers,
       (SELECT pg_database_size(current_database()))                      AS db_bytes
   `);
@@ -200,15 +194,6 @@ async function technicalMetrics(ctx) {
       failed24h: syncs - n('syncs_ok_24h'),
       successPercent: syncs ? Math.round((n('syncs_ok_24h') / syncs) * 10000) / 100 : 100,
       averageMs: Math.round(n('sync_avg_ms')),
-    },
-    backups: {
-      ok7d: n('backups_ok'),
-      failed7d: n('backups_failed'),
-      successPercent: (n('backups_ok') + n('backups_failed'))
-        ? Math.round((n('backups_ok') / (n('backups_ok') + n('backups_failed'))) * 10000) / 100
-        : 100,
-      storedMb: Math.round(n('backup_bytes') / 1048576),
-      encrypted: secrets.enabled(),
     },
     database: {
       latencyMs: Math.round(dbMs * 100) / 100,
@@ -245,10 +230,6 @@ async function featureMetrics(ctx) {
         WHERE at > now() - interval '30 days')                           AS shares_30d,
       (SELECT count(*) FROM share_log WHERE channel = 'email'
         AND at > now() - interval '30 days')                             AS emails_30d,
-      (SELECT count(*) FROM backups
-        WHERE created_at > now() - interval '30 days')                   AS backups_30d,
-      (SELECT count(*) FROM audit_log WHERE action = 'backup.restore'
-        AND at > now() - interval '30 days')                             AS restores_30d,
       (SELECT count(*) FROM audit_log WHERE action = 'export.csv'
         AND at > now() - interval '30 days')                             AS exports_30d,
       (SELECT count(*) FROM audit_log WHERE action = 'doc.download'
@@ -289,8 +270,6 @@ async function featureMetrics(ctx) {
       reportsViewedSinceRestart: reportViews,
     },
     data: {
-      backups: n('backups_30d'),
-      restores: n('restores_30d'),
       savedViews: n('saved_views'),
       pinnedReports: n('pinned_reports'),
     },

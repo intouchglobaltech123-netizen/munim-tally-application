@@ -117,16 +117,6 @@ export default function AdminMetricsPage() {
           sub={t.system.nodeVersion} />
       </div>
 
-      <SectionTitle icon={Database} note="last 7 days">Backups</SectionTitle>
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Figure label="Success" value={`${t.backups.successPercent}%`}
-          sub={`${t.backups.ok7d} ok, ${t.backups.failed7d} failed`}
-          tone={t.backups.failed7d > 0 ? 'bad' : 'ok'} />
-        <Figure label="Stored" value={`${t.backups.storedMb}MB`} />
-        <Figure label="Encrypted at rest" value={t.backups.encrypted ? 'Yes' : 'NO'}
-          tone={t.backups.encrypted ? 'ok' : 'bad'} />
-        <CountTile label="Restores (30d)" value={n(f.data.restores)} />
-      </div>
 
       <SectionTitle icon={Activity} note={f.window}>What people use</SectionTitle>
       <div className="mb-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -139,7 +129,6 @@ export default function AdminMetricsPage() {
       </div>
       <div className="mb-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <CountTile label="CSV exports" value={n(f.documents.csvExports)} />
-        <CountTile label="Backups" value={n(f.data.backups)} />
         <CountTile label="Saved views" value={n(f.data.savedViews)} />
         <CountTile label="Pinned reports" value={n(f.data.pinnedReports)} />
         <CountTile label="E-Invoices" value={n(f.compliance.eInvoices)} />

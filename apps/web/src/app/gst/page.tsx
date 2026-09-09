@@ -5,6 +5,7 @@ import { useAuth } from '../../lib/auth';
 import { useApi } from '../../lib/useApi';
 import { useMoney } from '../../lib/money';
 import { type GstSummary, type GstHealth, type GstHsn, type GstParties } from '../../lib/api';
+import Filters, { type FilterSpec, type FilterValues, matches } from '../../components/Filters';
 import {
   Badge, Card, Empty, ErrorNote, PageTitle, SectionTitle, Spinner,
 } from '../../components/ui';
@@ -43,10 +44,51 @@ export default function GstPage() {
 
   const base = company ? `/v1/companies/${encodeURIComponent(company.tallyGuid)}` : null;
   const qs = `?period=${period}`;
+  const [hf, setHf] = useState<FilterValues>({});
+  const [pf, setPf] = useState<FilterValues>({});
+
   const sum = useApi<GstSummary>(base && `${base}/gst${qs}`, [company?.tallyGuid, period]);
   const health = useApi<GstHealth>(base && `${base}/gst-health${qs}`, [company?.tallyGuid, period]);
   const hsn = useApi<GstHsn>(base && `${base}/gst-hsn${qs}`, [company?.tallyGuid, period]);
   const parties = useApi<GstParties>(base && `${base}/gst-parties${qs}`, [company?.tallyGuid, period]);
+
+  /*
+   * The rate options are the rates in the data, not the rates in the Act.
+   *
+   * A business selling only at 5% and 18% should not be offered 0.25% and 3%,
+   * and one that has somehow booked a rate that does not exist should still be
+   * able to filter to it - which is exactly when you would want to.
+   */
+  type HsnRow = GstHsn['rows'][number];
+  type PartyRow = GstParties['parties'][number];
+  const rates = [...new Set((hsn.data?.rows ?? []).map((r) => r.ratePct))].sort((a, b) => a - b);
+  const states = [...new Set((parties.data?.parties ?? []).map((p) => p.state).filter(Boolean))].sort();
+
+  const hsnSpecs: FilterSpec<HsnRow>[] = [
+    { key: 'q', label: 'HSN or SAC', kind: 'search', on: (r) => r.hsn,
+      placeholder: 'Search HSN/SAC…' },
+    { key: 'rate', label: 'Rate', kind: 'select', on: (r) => String(r.ratePct),
+      options: rates.map((v) => ({ value: String(v), label: v > 0 ? `${v}%` : 'Nil' })) },
+    { key: 'val', label: 'Taxable value', kind: 'amountRange', on: (r) => r.valuePaise },
+    { key: 'missing', label: 'Unclassified only', kind: 'toggle', on: (r) => !r.hsn },
+  ];
+
+  const partySpecs: FilterSpec<PartyRow>[] = [
+    { key: 'q', label: 'Party or GSTIN', kind: 'search',
+      on: (p) => `${p.party} ${p.gstin}`, placeholder: 'Search party or GSTIN…' },
+    { key: 'kind', label: 'Registration', kind: 'select', on: (p) => p.kind,
+      options: [{ value: 'b2b', label: 'B2B' }, { value: 'b2c', label: 'B2C' }] },
+    { key: 'state', label: 'State', kind: 'select', on: (p) => p.state,
+      options: states.map((v) => ({ value: v, label: v })) },
+    { key: 'sales', label: 'Sales', kind: 'amountRange', on: (p) => p.sales },
+    /*
+     * "Something wrong with the GSTIN" rather than a specific fault: the check
+     * returns several kinds of wrong, and at filter level they are one
+     * question - which of these do I have to go and fix before filing.
+     */
+    { key: 'bad', label: 'GSTIN needs attention', kind: 'toggle',
+      on: (p) => !!p.gstin && p.gstinCheck != null && !p.gstinCheck.valid },
+  ];
 
   if (sum.error) return <ErrorNote message={sum.error} onRetry={sum.reload} />;
   if (sum.loading && !sum.data) return <Spinner label="Adding up your GST…" />;
@@ -276,6 +318,7 @@ export default function GstPage() {
                 hint={hsn.data?.note || 'No item lines in this period.'} />
             ) : (
               <Card>
+                <Filters specs={hsnSpecs} values={hf} onChange={setHf} />
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-line text-left text-xs uppercase
@@ -288,7 +331,7 @@ export default function GstPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {hsn.data.rows.map((r) => (
+                    {hsn.data.rows.filter((r) => matches(r, hsnSpecs, hf)).map((r) => (
                       <tr key={r.hsn + r.ratePct} className="border-b border-slate-50 last:border-0">
                         <td className="py-2 pr-3 font-mono">{r.hsn}</td>
                         <td className="py-2 pr-3 text-right tabular-nums">
@@ -318,6 +361,7 @@ export default function GstPage() {
           ) : (
             <Card>
               <div className="overflow-x-auto">
+                <Filters specs={partySpecs} values={pf} onChange={setPf} />
                 <table className="w-full min-w-[680px] text-sm">
                   <thead>
                     <tr className="border-b border-line text-left text-xs uppercase
@@ -330,7 +374,7 @@ export default function GstPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {parties.data.parties.map((p) => (
+                    {parties.data.parties.filter((p) => matches(p, partySpecs, pf)).map((p) => (
                       <tr key={p.party} className="border-b border-slate-50 last:border-0">
                         <td className="py-2 pr-3">
                           <div className="font-medium text-slate-800">{p.party}</div>

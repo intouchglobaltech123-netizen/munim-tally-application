@@ -113,7 +113,7 @@ test('a subscription starting on the 31st does not drift', () => {
 });
 
 test('a year costs ten months, not twelve', () => {
-  assert.equal(sub.priceFor('pro', 'yearly'), sub.priceFor('pro', 'monthly') * 10);
+  assert.equal(sub.priceFor('standard', 'yearly'), sub.priceFor('standard', 'monthly') * 10);
 });
 
 test('the financial year runs April to March', () => {
@@ -124,66 +124,27 @@ test('the financial year runs April to March', () => {
 // --- subscribing ------------------------------------------------------------
 
 test('subscribing sets the plan on the org, so quotas follow', async () => {
-  // If the two disagree, the customer pays for Pro and is refused a second
+  // If the two disagree, the customer pays and is still refused a second
   // company.
   const f = await fixture();
-  await sub.subscribe(ctxFor(f, { plan: 'pro' }));
+  await sub.subscribe(ctxFor(f, { plan: 'standard' }));
   const { rows } = await query('SELECT plan FROM orgs WHERE id = $1', [f.orgId]);
-  assert.equal(rows[0].plan, 'pro');
-});
-
-test('an upgrade takes effect immediately', async () => {
-  const f = await fixture();
-  await sub.subscribe(ctxFor(f, { plan: 'basic' }));
-  const r = await sub.subscribe(ctxFor(f, { plan: 'pro' }));
-  assert.equal(r.plan, 'pro');
-  assert.ok(!r.scheduled);
-});
-
-test('a downgrade waits for the period they already paid for', async () => {
-  /*
-   * Cutting somebody to the lower plan the day they ask takes away what they
-   * already bought.
-   */
-  const f = await fixture();
-  await sub.subscribe(ctxFor(f, { plan: 'pro' }));
-  const r = await sub.subscribe(ctxFor(f, { plan: 'basic' }));
-
-  assert.equal(r.scheduled, true);
-  const { rows } = await query('SELECT plan FROM orgs WHERE id = $1', [f.orgId]);
-  assert.equal(rows[0].plan, 'pro', 'still on the plan they paid for');
-});
-
-test('a scheduled downgrade lands when the period runs out', async () => {
-  const f = await fixture();
-  await sub.subscribe(ctxFor(f, { plan: 'pro' }));
-  await sub.subscribe(ctxFor(f, { plan: 'basic' }));
-  await query(`UPDATE subscriptions SET current_until = now() - interval '1 day'
-                WHERE org_id = $1`, [f.orgId]);
-
-  await sub.runBilling();
-  const { rows } = await query('SELECT plan FROM orgs WHERE id = $1', [f.orgId]);
-  assert.equal(rows[0].plan, 'basic');
+  assert.equal(rows[0].plan, 'standard');
 });
 
 test('only one live subscription can exist', async () => {
   // Two would double-bill and disagree about which limits apply.
   const f = await fixture();
-  await sub.subscribe(ctxFor(f, { plan: 'pro' }));
+  await sub.subscribe(ctxFor(f, { plan: 'standard' }));
   await assert.rejects(() => query(
     `INSERT INTO subscriptions (org_id, plan, current_until)
-     VALUES ($1,'basic', now() + interval '30 days')`, [f.orgId]),
+     VALUES ($1,'standard', now() + interval '30 days')`, [f.orgId]),
     /subscriptions_one_live|duplicate key/);
-});
-
-test('enterprise cannot be self-served', async () => {
-  const f = await fixture();
-  await assert.rejects(() => sub.subscribe(ctxFor(f, { plan: 'enterprise' })), /Talk to us|talk to us/i);
 });
 
 test('a member cannot change the plan', async () => {
   const f = await fixture();
-  const ctx = ctxFor(f, { plan: 'pro' });
+  const ctx = ctxFor(f, { plan: 'standard' });
   ctx.session.user = { id: f.userId, role: 'member', roleId: 'r1',
                        permissions: { settings: ['read', 'update'] } };
   await assert.rejects(() => sub.subscribe(ctx), /Only an owner/);
@@ -193,16 +154,16 @@ test('a member cannot change the plan', async () => {
 
 test('cancelling keeps everything working until the period ends', async () => {
   const f = await fixture();
-  await sub.subscribe(ctxFor(f, { plan: 'pro' }));
+  await sub.subscribe(ctxFor(f, { plan: 'standard' }));
   const r = await sub.cancel(ctxFor(f));
   assert.ok(r.endsAt);
   const { rows } = await query('SELECT plan FROM orgs WHERE id = $1', [f.orgId]);
-  assert.equal(rows[0].plan, 'pro');
+  assert.equal(rows[0].plan, 'standard');
 });
 
 test('a cancellation can be undone before it takes effect', async () => {
   const f = await fixture();
-  await sub.subscribe(ctxFor(f, { plan: 'pro' }));
+  await sub.subscribe(ctxFor(f, { plan: 'standard' }));
   await sub.cancel(ctxFor(f));
   await sub.resume(ctxFor(f));
   const s = await sub.current(f.orgId);
@@ -216,7 +177,7 @@ test('a lapsed customer keeps their data and their sign-in', async () => {
    * nothing else.
    */
   const f = await fixture();
-  await sub.subscribe(ctxFor(f, { plan: 'pro' }));
+  await sub.subscribe(ctxFor(f, { plan: 'standard' }));
   await sub.cancel(ctxFor(f));
   await query(`UPDATE subscriptions SET current_until = now() - interval '1 day'
                 WHERE org_id = $1`, [f.orgId]);
@@ -233,7 +194,7 @@ test('a lapsed customer keeps their data and their sign-in', async () => {
 
 test('a failed payment starts a grace period rather than cutting service', async () => {
   const f = await fixture();
-  await sub.subscribe(ctxFor(f, { plan: 'pro' }));
+  await sub.subscribe(ctxFor(f, { plan: 'standard' }));
   const s = await sub.current(f.orgId);
 
   await sub.recordPayment(f.orgId, {
@@ -248,7 +209,7 @@ test('a failed payment starts a grace period rather than cutting service', async
 
 test('a grace period that runs out expires the subscription', async () => {
   const f = await fixture();
-  await sub.subscribe(ctxFor(f, { plan: 'pro' }));
+  await sub.subscribe(ctxFor(f, { plan: 'standard' }));
   const s = await sub.current(f.orgId);
   await sub.recordPayment(f.orgId, {
     subscriptionId: s.id, status: 'failed', gateway: 'test', gatewayRef: `g-${s.id}`,
@@ -263,7 +224,7 @@ test('a grace period that runs out expires the subscription', async () => {
 
 test('a successful payment issues a numbered GST invoice', async () => {
   const f = await fixture();
-  await sub.subscribe(ctxFor(f, { plan: 'pro' }));
+  await sub.subscribe(ctxFor(f, { plan: 'standard' }));
   const s = await sub.current(f.orgId);
 
   const out = await sub.recordPayment(f.orgId, {
@@ -280,7 +241,7 @@ test('a successful payment issues a numbered GST invoice', async () => {
 test('a failed payment never consumes an invoice number', async () => {
   // The gap a declined card would leave is the thing an auditor asks about.
   const f = await fixture();
-  await sub.subscribe(ctxFor(f, { plan: 'pro' }));
+  await sub.subscribe(ctxFor(f, { plan: 'standard' }));
   const s = await sub.current(f.orgId);
 
   const before = await query('SELECT count(*)::int n FROM billing_invoices');
@@ -296,7 +257,7 @@ test('a replayed webhook does not charge twice', async () => {
    * race; the unique index does not.
    */
   const f = await fixture();
-  await sub.subscribe(ctxFor(f, { plan: 'pro' }));
+  await sub.subscribe(ctxFor(f, { plan: 'standard' }));
   const s = await sub.current(f.orgId);
   const ref = `dup-${s.id}`;
 
@@ -317,7 +278,7 @@ test('a replayed webhook does not charge twice', async () => {
 
 test('invoice numbers are unique and gap-free within a year', async () => {
   const f = await fixture();
-  await sub.subscribe(ctxFor(f, { plan: 'pro' }));
+  await sub.subscribe(ctxFor(f, { plan: 'standard' }));
   const s = await sub.current(f.orgId);
 
   for (let i = 0; i < 5; i++) {
@@ -337,7 +298,7 @@ test('invoice numbers are unique and gap-free within a year', async () => {
 test('concurrent payments do not collide on the invoice number', async () => {
   // Exactly what a gateway retrying a batch looks like.
   const f = await fixture();
-  await sub.subscribe(ctxFor(f, { plan: 'pro' }));
+  await sub.subscribe(ctxFor(f, { plan: 'standard' }));
   const s = await sub.current(f.orgId);
 
   const results = await Promise.all([0, 1, 2, 3, 4, 5].map((i) =>
@@ -363,18 +324,21 @@ async function coupon(code, fields) {
 
 test('an expired coupon is refused', async () => {
   await coupon('TESTEXP', { percent_off: 20, expires_at: new Date(Date.now() - 86400000) });
-  await assert.rejects(() => sub.couponFor('TESTEXP', 'pro'), /expired/);
+  await assert.rejects(() => sub.couponFor('TESTEXP', 'standard'), /expired/);
 });
 
 test('a used-up coupon is refused', async () => {
   await coupon('TESTMAX', { percent_off: 20, max_redemptions: 1, redeemed: 1 });
-  await assert.rejects(() => sub.couponFor('TESTMAX', 'pro'), /used up/);
+  await assert.rejects(() => sub.couponFor('TESTMAX', 'standard'), /used up/);
 });
 
 test('a coupon restricted to one plan is refused on another', async () => {
-  await coupon('TESTPRO', { percent_off: 20, plans: ['pro'] });
-  await assert.rejects(() => sub.couponFor('TESTPRO', 'basic'), /works on Pro/);
-  assert.ok(await sub.couponFor('TESTPRO', 'pro'));
+  // Restricted to the trial, then offered against the paid plan. There is one
+  // sellable plan now, so the trial is the only other key a coupon can name -
+  // the restriction machinery is what is being tested, not the ladder.
+  await coupon('TESTPRO', { percent_off: 20, plans: ['trial'] });
+  await assert.rejects(() => sub.couponFor('TESTPRO', 'standard'), /works on Free trial/);
+  assert.ok(await sub.couponFor('TESTPRO', 'trial'));
 });
 
 test('a coupon cannot be both a percentage and an amount', async () => {
@@ -393,7 +357,7 @@ test('a coupon over 100% is refused by the database', async () => {
 test('redeeming a coupon counts it', async () => {
   await coupon('TESTCOUNT', { percent_off: 10 });
   const f = await fixture();
-  await sub.subscribe(ctxFor(f, { plan: 'pro', coupon: 'TESTCOUNT' }));
+  await sub.subscribe(ctxFor(f, { plan: 'standard', coupon: 'TESTCOUNT' }));
   const { rows } = await query('SELECT redeemed FROM coupons WHERE code = $1', ['TESTCOUNT']);
   assert.equal(rows[0].redeemed, 1);
 });
@@ -402,16 +366,9 @@ test('redeeming a coupon counts it', async () => {
 
 test('the overview explains the status in words', async () => {
   const f = await fixture();
-  await sub.subscribe(ctxFor(f, { plan: 'pro' }));
+  await sub.subscribe(ctxFor(f, { plan: 'standard' }));
   const o = await sub.overview(ctxFor(f));
   assert.match(o.subscription.message, /Renews on/);
-  assert.equal(o.subscription.planLabel, 'Pro');
+  assert.equal(o.subscription.planLabel, 'Munim');
 });
 
-test('a preview of a downgrade charges nothing today', async () => {
-  const f = await fixture();
-  await sub.subscribe(ctxFor(f, { plan: 'pro' }));
-  const p = await sub.preview(ctxFor(f, {}, '?plan=basic'));
-  assert.equal(p.dueNowPaise, 0);
-  assert.equal(p.downgrade, true);
-});

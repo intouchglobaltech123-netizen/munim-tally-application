@@ -6,7 +6,6 @@ const events = require('../lib/events');
 const VT = require('../lib/vouchertypes');
 const audit = require('../lib/audit');
 const quotas = require('../lib/quotas');
-const webhooks = require('../lib/webhooks');
 const plans = require('../lib/plans');
 const businesses = require('../lib/businesses');
 const { dateOnly } = audit;
@@ -556,11 +555,6 @@ async function trailAfterSync(conn, trail) {
      * throws, because a webhook is a notification ABOUT something that already
      * happened and failing to deliver it must not undo the thing it describes.
      */
-    webhooks.emit(conn.orgId, t.action === 'voucher.changed' ? 'voucher.changed'
-                            : t.action === 'voucher.deleted' ? 'voucher.deleted'
-                            : 'voucher.created', {
-      voucher: t.guid, name: t.name, before: t.before ?? null, after: t.after ?? null,
-    });
 
     await audit.record(ctx, t.action, {
       companyId: t.companyId,

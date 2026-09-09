@@ -14,7 +14,7 @@ const quotas = require('../src/lib/quotas');
 const orgs = [];
 after(async () => { for (const id of orgs) await query('DELETE FROM orgs WHERE id = $1', [id]); });
 
-async function org(plan = 'basic', extra = {}) {
+async function org(plan = 'standard', extra = {}) {
   const { rows } = await query(
     `INSERT INTO orgs (name, plan, limits) VALUES ($1,$2,$3::jsonb) RETURNING *`,
     ['plan-test', plan, JSON.stringify(extra)]);
@@ -34,7 +34,7 @@ test('every plan defines every limit', () => {
 });
 
 test('every plan defines every feature', () => {
-  const keys = Object.keys(plans.PLANS.pro.features);
+  const keys = Object.keys(plans.PLANS.standard.features);
   for (const [name, p] of Object.entries(plans.PLANS)) {
     for (const k of keys) {
       assert.ok(k in p.features, `plan "${name}" says nothing about "${k}"`);
@@ -42,28 +42,36 @@ test('every plan defines every feature', () => {
   }
 });
 
-test('the plans get more generous as they get more expensive', () => {
-  // A ladder where a dearer plan allows less of something is a support call
-  // and a refund, and it is the kind of thing a hand-edited table grows.
-  const ladder = ['trial', 'basic', 'pro', 'enterprise'];
-  const countable = ['companies', 'users', 'connectors', 'storageMb', 'backupKeep'];
+test('paying is never worse than trialling', () => {
+  // There is one plan now, so there is no ladder to keep in order. What is
+  // left is the promise the trial makes: it advertises the paid product, so
+  // paying must not take anything away. A customer whose trial ended and who
+  // then found they could connect fewer computers would be right to ask for
+  // their money back.
+  const countable = ['companies', 'users', 'connectors', 'devicesPerUser'];
 
   for (const key of countable) {
-    let prev = -1;
-    for (const name of ladder.slice(1)) {         // trial is deliberately generous
-      const v = plans.PLANS[name].limits[key];
-      const asNumber = v === null ? Infinity : v;
-      assert.ok(asNumber >= prev,
-        `${name} allows less ${key} (${v}) than the plan below it (${prev})`);
-      prev = asNumber;
-    }
+    const trial = plans.PLANS.trial.limits[key];
+    const paid = plans.PLANS.standard.limits[key];
+    const n = (v) => (v === null ? Infinity : v);
+    assert.ok(n(paid) >= n(trial),
+      `paying allows less ${key} (${paid}) than the trial did (${trial})`);
   }
+});
+
+test('there is exactly one plan for sale', () => {
+  // The pricing page, the quota checks and the admin override all read this
+  // table. If a second sellable plan ever reappears it has to be deliberate.
+  const sold = plans.catalogue();
+  assert.equal(sold.length, 1);
+  assert.equal(sold[0].key, 'standard');
+  assert.equal(sold[0].pricePaise, 1000000, 'Rs 10,000 a month, in paise');
 });
 
 test('null means unlimited and nothing else does', () => {
   // Not 0, not -1, not a very large number: each of those reads as a real
   // limit somewhere downstream.
-  assert.equal(plans.limitFor({ plan: 'enterprise' }, 'companies'), null);
+  assert.equal(plans.limitFor({ plan: 'standard' }, 'companies'), null);
   for (const p of Object.values(plans.PLANS)) {
     for (const v of Object.values(p.limits)) {
       assert.ok(v === null || (Number.isInteger(v) && v >= 0),
@@ -74,12 +82,12 @@ test('null means unlimited and nothing else does', () => {
 
 test('a per-org override beats the plan', async () => {
   // Sales promises get made. The alternative is a bespoke plan per negotiation.
-  const o = await org('basic', { companies: 7 });
+  const o = await org('standard', { companies: 7 });
   assert.equal(plans.limitFor(o, 'companies'), 7);
 });
 
 test('an override of null means unlimited for that customer', async () => {
-  const o = await org('basic', { companies: null });
+  const o = await org('standard', { companies: null });
   assert.equal(plans.limitFor(o, 'companies'), null);
 });
 
@@ -89,23 +97,26 @@ test('the older max_companies column still wins where it is set', async () => {
    * Ignoring it would silently reset every customer whose ceiling was raised
    * by hand, which is the worst possible day to discover a refactor.
    */
-  const o = await org('basic');
+  const o = await org('standard');
   await query('UPDATE orgs SET max_companies = 4 WHERE id = $1', [o.id]);
   const { rows } = await query('SELECT * FROM orgs WHERE id = $1', [o.id]);
   assert.equal(plans.limitFor(rows[0], 'companies'), 4);
 });
 
 test('an unknown key in the overrides is ignored, not trusted', async () => {
-  const o = await org('basic', { nonsense: 999 });
-  assert.equal(plans.limitFor(o, 'companies'), 1);
+  const o = await org('standard', { nonsense: 999 });
+  // The junk key must not disturb a real limit: companies falls through to
+  // the plan, which sets no ceiling. (limitFor is only ever asked about keys
+  // in the LIMITS table, so a junk key is inert rather than rejected.)
+  assert.equal(plans.limitFor(o, 'companies'), null);
 });
 
 test('a limit message names the plan, the number and where they are', () => {
   try {
-    quotas.assertWithin({ plan: 'basic' }, 'users', 3);
+    quotas.assertWithin({ plan: 'trial' }, 'users', 3);
     assert.fail('should have refused');
   } catch (e) {
-    assert.match(e.message, /Basic/);
+    assert.match(e.message, /Free trial/);
     assert.match(e.message, /3 people/);
     assert.match(e.message, /you are at 3/);
     assert.equal(e.status, 403);
@@ -114,10 +125,10 @@ test('a limit message names the plan, the number and where they are', () => {
 });
 
 test('a limit of one is written in the singular', () => {
-  // "Basic includes 1 companies" is the kind of detail that reads as
+  // "Free trial includes 1 companies" is the kind of detail that reads as
   // sloppiness in a product somebody is trusting with their books.
   try {
-    quotas.assertWithin({ plan: 'basic' }, 'companies', 1);
+    quotas.assertWithin({ plan: 'trial', limits: { companies: 1 } }, 'companies', 1);
   } catch (e) {
     assert.match(e.message, /1 company,/);
   }
@@ -131,7 +142,7 @@ test('brand names survive the message', () => {
     ['eWayBillsPerMonth', 500, /E-Way Bills/],
   ]) {
     try {
-      quotas.assertWithin({ plan: 'pro' }, key, 99999);
+      quotas.assertWithin({ plan: 'trial' }, key, 99999);
     } catch (e) {
       assert.match(e.message, expect);
     }
@@ -139,13 +150,14 @@ test('brand names survive the message', () => {
 });
 
 test('being exactly at the limit refuses the next one', () => {
-  // Off by one here lets every plan sell one extra of everything.
-  assert.throws(() => quotas.assertWithin({ plan: 'basic' }, 'companies', 1));
-  assert.doesNotThrow(() => quotas.assertWithin({ plan: 'basic' }, 'companies', 0));
+  // Off by one here lets every ceiling sell one extra of everything.
+  const capped = { plan: 'standard', limits: { companies: 1 } };
+  assert.throws(() => quotas.assertWithin(capped, 'companies', 1));
+  assert.doesNotThrow(() => quotas.assertWithin(capped, 'companies', 0));
 });
 
 test('unlimited never refuses', () => {
-  assert.doesNotThrow(() => quotas.assertWithin({ plan: 'enterprise' }, 'users', 10_000));
+  assert.doesNotThrow(() => quotas.assertWithin({ plan: 'standard' }, 'users', 10_000));
 });
 
 test('usage is counted from the data, not a stored total', async () => {
@@ -154,7 +166,7 @@ test('usage is counted from the data, not a stored total', async () => {
    * a customer is told they are at 15 of 15 users while looking at a list of
    * 11, the number has cost more in support than it ever saved in queries.
    */
-  const o = await org('pro');
+  const o = await org('standard');
   await query(
     `INSERT INTO companies (org_id, tally_guid, name) VALUES ($1,$2,'A'),($1,$3,'B')`,
     [o.id, `q-${o.id}-1`, `q-${o.id}-2`]);
@@ -168,7 +180,7 @@ test('usage is counted from the data, not a stored total', async () => {
 });
 
 test('a disabled person does not use a seat', async () => {
-  const o = await org('pro');
+  const o = await org('standard');
   await query(`INSERT INTO users (org_id, email, role, status)
                VALUES ($1,$2,'owner','active'), ($1,$3,'member','disabled')`,
     [o.id, `qa-${o.id}@example.com`, `qb-${o.id}@example.com`]);
@@ -177,7 +189,11 @@ test('a disabled person does not use a seat', async () => {
 });
 
 test('the report says what is left, and flags what is over', async () => {
-  const o = await org('basic');
+  // An override, since the sold plan has no company ceiling. Being over a
+  // limit is still reachable - an admin lowers one, or a customer is moved to
+  // a tighter override after the fact - and the report has to say so rather
+  // than showing a tidy 100%.
+  const o = await org('standard', { companies: 1 });
   await query(`INSERT INTO companies (org_id, tally_guid, name) VALUES ($1,$2,'A'),($1,$3,'B')`,
     [o.id, `r-${o.id}-1`, `r-${o.id}-2`]);
 
@@ -191,7 +207,7 @@ test('the report says what is left, and flags what is over', async () => {
 });
 
 test('an unlimited line reads as unlimited rather than as 0%', async () => {
-  const o = await org('enterprise');
+  const o = await org('standard');
   const r = await quotas.report(o);
   const companies = r.lines.find((l) => l.key === 'companies');
   assert.equal(companies.unlimited, true);
@@ -222,8 +238,9 @@ test('the database refuses a plan Munim does not sell', async () => {
     /orgs_plan_known|violates check constraint/);
 });
 
-test('the price list hides the internal plan', () => {
+test('the price list shows only what is for sale', () => {
   const keys = plans.catalogue().map((p) => p.key);
-  assert.ok(!keys.includes('internal'));
-  assert.deepEqual(keys, ['trial', 'basic', 'pro', 'enterprise']);
+  assert.ok(!keys.includes('internal'), 'Munim\u2019s own account is not a product');
+  assert.ok(!keys.includes('trial'), 'the trial is a state, not something to buy');
+  assert.deepEqual(keys, ['standard']);
 });
