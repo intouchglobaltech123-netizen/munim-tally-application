@@ -14,3 +14,4 @@ allowBuilds:
   protobufjs: true
   msgpackr-extract: true
   unrs-resolver: true
+  '@firebase/util': true
