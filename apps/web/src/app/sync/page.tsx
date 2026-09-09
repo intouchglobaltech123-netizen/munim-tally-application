@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '../../lib/auth';
 import { useApi } from '../../lib/useApi';
 import { post, patch, ago, type SyncHistory, type SyncLogs, type CompanySummary } from '../../lib/api';
+import Filters, { type FilterSpec, type FilterValues, matches } from '../../components/Filters';
 import {
   Badge, Button, Card, Empty, ErrorNote, PageTitle, SectionTitle, Spinner,
 } from '../../components/ui';
@@ -38,6 +39,53 @@ export default function SyncPage() {
   const hist = useApi<SyncHistory>(`/v1/sync/history?limit=60${onlyFailed ? '&failed=1' : ''}`,
     [onlyFailed]);
   const logs = useApi<SyncLogs>('/v1/sync/logs?limit=200', []);
+  const [rf, setRf] = useState<FilterValues>({});
+  const [lf, setLf] = useState<FilterValues>({});
+
+  /*
+   * Two lists, two questions.
+   *
+   * The run history is read when something is wrong and you want the failures;
+   * the log is read when you already know which run and want the line. Both
+   * are long, and both were previously scrolled by hand.
+   */
+  type Run = SyncHistory['runs'][number];
+  type Line = SyncLogs['lines'][number];
+  const machines = [...new Set((hist.data?.runs ?? [])
+    .map((r) => r.companyName).filter(Boolean))] as string[];
+
+  const runSpecs: FilterSpec<Run>[] = [
+    { key: 'q', label: 'Company or error', kind: 'search',
+      on: (r) => `${r.companyName ?? ''} ${r.error}`,
+      placeholder: 'Search company or error…' },
+    { key: 'failed', label: 'Failures only', kind: 'toggle', on: (r) => !r.ok },
+    { key: 'kind', label: 'What went wrong', kind: 'select', on: (r) => r.errorKind,
+      options: [
+        { value: 'network', label: 'Network' }, { value: 'auth', label: 'Authentication' },
+        { value: 'tally', label: 'Tally' }, { value: 'other', label: 'Something else' },
+      ] },
+    { key: 'trigger', label: 'Started by', kind: 'select', on: (r) => r.trigger,
+      options: [
+        { value: 'auto', label: 'Schedule' }, { value: 'manual', label: 'Someone' },
+        { value: 'startup', label: 'Startup' }, { value: 'command', label: 'Command' },
+      ] },
+    { key: 'company', label: 'Company', kind: 'select', on: (r) => r.companyName ?? '',
+      options: machines.map((m) => ({ value: m, label: m })) },
+    { key: 'at', label: 'Started', kind: 'dateRange', on: (r) => r.startedAt },
+    { key: 'empty', label: 'Brought something back', kind: 'toggle',
+      on: (r) => r.records > 0 },
+  ];
+
+  const logSpecs: FilterSpec<Line>[] = [
+    { key: 'q', label: 'Line', kind: 'search', on: (l) => l.line,
+      placeholder: 'Search the log…' },
+    { key: 'level', label: 'Level', kind: 'select', on: (l) => l.level,
+      options: [
+        { value: 'error', label: 'Errors' }, { value: 'warn', label: 'Warnings' },
+        { value: 'info', label: 'Information' },
+      ] },
+    { key: 'at', label: 'Logged', kind: 'dateRange', on: (l) => l.at },
+  ];
   const summary = useApi<CompanySummary>(
     company ? `/v1/companies/${encodeURIComponent(company.tallyGuid)}/summary` : null,
     [company?.tallyGuid]);
@@ -178,6 +226,7 @@ export default function SyncPage() {
         ) : (
           <Card>
             <div className="overflow-x-auto">
+              <Filters specs={runSpecs} values={rf} onChange={setRf} />
               <table className="w-full min-w-[640px] text-sm">
                 <thead>
                   <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-slate-400">
@@ -190,7 +239,7 @@ export default function SyncPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {hist.data.runs.map((r) => (
+                  {hist.data.runs.filter((r) => matches(r, runSpecs, rf)).map((r) => (
                     <tr key={r.id} className="border-b border-slate-50 last:border-0">
                       <td className="py-2.5 pr-3 whitespace-nowrap text-slate-600">{ago(r.startedAt)}</td>
                       <td className="py-2.5 pr-3 text-slate-700">{r.companyName ?? '—'}</td>
@@ -242,9 +291,11 @@ export default function SyncPage() {
         <Empty title="No log fetched yet" icon={Terminal}
           hint="Press “Fetch logs” above and the connector uploads its recent log." />
       ) : (
+        <>
+        <Filters specs={logSpecs} values={lf} onChange={setLf} />
         <Card>
           <div className="max-h-96 overflow-auto rounded-lg bg-slate-900 p-3">
-            {logs.data.lines.map((l, i) => (
+            {logs.data.lines.filter((l) => matches(l, logSpecs, lf)).map((l, i) => (
               <div key={i} className="flex gap-2 font-mono text-[11px] leading-relaxed">
                 <span className="shrink-0 text-slate-500">
                   {new Date(l.at).toLocaleString('en-IN', {
@@ -259,6 +310,7 @@ export default function SyncPage() {
             ))}
           </div>
         </Card>
+        </>
       )}
     </>
   );

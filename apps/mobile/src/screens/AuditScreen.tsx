@@ -73,7 +73,7 @@ export default function AuditScreen() {
       {!data?.entries.length ? (
         <Card style={{ marginTop: 14 }}>
           <Empty title="Nothing recorded yet"
-            hint="Changes to people, roles, settings and backups will appear here." />
+            hint="Changes to people, roles and settings will appear here." />
         </Card>
       ) : data.entries.map((e) => (
         <Row key={e.id} e={e} open={open === e.id}

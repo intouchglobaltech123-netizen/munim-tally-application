@@ -84,7 +84,7 @@ export default function AuditPage() {
       {log.loading && !log.data ? <Spinner label="Reading the log…" />
         : !log.data?.entries.length ? (
           <Empty title="Nothing recorded yet" icon={ScrollText}
-            hint="Changes to people, roles, settings and backups appear here." />
+            hint="Changes to people, roles and settings appear here." />
         ) : (
           <Card>
             <div className="overflow-x-auto">

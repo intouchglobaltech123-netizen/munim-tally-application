@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Alert, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View,
+  Alert, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import { useApp, useApi } from '../lib/store';
 import { post, type Outstanding, type OutstandingParty } from '../lib/api';
@@ -10,6 +10,7 @@ import {
   Avatar, Sno,
 } from '../components/ui';
 import { T } from '../theme';
+import Filters, { type FilterSpec, type FilterValues, matches } from '../components/Filters';
 
 const BUCKETS = ['0-30', '31-60', '61-90', '90+'] as const;
 
@@ -17,7 +18,7 @@ export default function OutstandingScreen({ navigation }: any) {
   const { company, privacy } = useApp();
   const [kind, setKind] = useState<'receivable' | 'payable'>('receivable');
   const [bucket, setBucket] = useState<string | null>(null);
-  const [q, setQ] = useState('');
+  const [f, setF] = useState<FilterValues>({});
   const [open, setOpen] = useState<string | null>(null);
   const [sent, setSent] = useState<Record<string, string>>({});
 
@@ -48,9 +49,28 @@ export default function OutstandingScreen({ navigation }: any) {
   if (error) return <View style={s.wrap}><ErrorNote message={error} onRetry={reload} /></View>;
   if (loading || !data) return <Loading label="Loading outstanding…" />;
 
-  const needle = q.trim().toLowerCase();
+  /*
+   * The same filters as the web screen, and deliberately so: somebody who
+   * learns "has a phone number" at their desk should find it on the phone.
+   * The credit-terms options come from the data for the same reason as there.
+   */
+  const terms = [...new Set(data.items.map((p) => p.creditDays))].sort((a, b) => a - b);
+  const specs: FilterSpec<OutstandingParty>[] = [
+    { key: 'q', label: 'Party', kind: 'search', on: (p) => p.party,
+      placeholder: 'Search party…' },
+    { key: 'amt', label: 'Amount pending', kind: 'amountRange', on: (p) => p.totalPaise },
+    { key: 'overdue', label: 'Has overdue', kind: 'toggle', on: (p) => p.overduePaise > 0 },
+    { key: 'phone', label: 'Has a phone number', kind: 'toggle', on: (p) => !!p.phone },
+    { key: 'terms', label: 'Credit terms', kind: 'select',
+      on: (p) => String(p.creditDays),
+      options: terms.map((d) => ({ value: String(d), label: d === 0 ? 'Cash' : `${d} days` })) },
+    { key: 'age', label: 'Oldest bill', kind: 'select',
+      on: (p) => bucketOf(p.oldestDays),
+      options: BUCKETS.map((bk) => ({ value: bk, label: bk === '90+' ? '90+ days' : `${bk} days` })) },
+  ];
+
   const items = data.items.filter((p) => {
-    if (needle && !p.party.toLowerCase().includes(needle)) return false;
+    if (!matches(p, specs, f)) return false;
     if (!bucket) return true;
     return p.bills.some((bl) => bl.days > 0 && bucketOf(bl.days) === bucket);
   });
@@ -78,8 +98,7 @@ export default function OutstandingScreen({ navigation }: any) {
         ))}
       </View>
 
-      <TextInput value={q} onChangeText={setQ} placeholder="Search party…"
-        placeholderTextColor="#9aa8a0" style={s.search} />
+      <Filters specs={specs} values={f} onChange={setF} />
 
       <View style={s.bucketRow}>
         {BUCKETS.map((bk) => {

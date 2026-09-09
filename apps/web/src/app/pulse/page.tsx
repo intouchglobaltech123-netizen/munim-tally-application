@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '../../lib/auth';
 import { useApi } from '../../lib/useApi';
 import { inr, type Pulse, type Payer, type Mover } from '../../lib/api';
+import Filters, { type FilterSpec, type FilterValues, matches } from '../../components/Filters';
 import {
   Badge, Card, Empty, ErrorNote, PageTitle, SectionTitle, Settling, Spinner,
   TileSkeleton,
@@ -24,6 +25,30 @@ import {
 export default function PulsePage() {
   const { company, loading } = useAuth();
   const [window, setWindow] = useState(90);
+  const [pf, setPf] = useState<FilterValues>({});
+
+  /*
+   * Payers, narrowed.
+   *
+   * The verdict is already computed server-side from days against terms, so
+   * filtering on it rather than re-deriving one here keeps the table and the
+   * filter telling the same story.
+   */
+  const payerSpecs: FilterSpec<Payer>[] = [
+    { key: 'q', label: 'Party', kind: 'search', on: (x) => x.party,
+      placeholder: 'Search party…' },
+    { key: 'val', label: 'Business done', kind: 'amountRange', on: (x) => x.valuePaise },
+    { key: 'late', label: 'Has paid late', kind: 'toggle', on: (x) => x.lateBills > 0 },
+    { key: 'terms', label: 'Over their terms', kind: 'toggle',
+      on: (x) => x.daysAgainstTerms != null && x.daysAgainstTerms > 0 },
+    { key: 'speed', label: 'How they pay', kind: 'select',
+      on: (x) => (x.averageDays <= 30 ? 'fast' : x.averageDays <= 60 ? 'ok' : 'slow'),
+      options: [
+        { value: 'fast', label: 'Within 30 days' },
+        { value: 'ok', label: '31 to 60 days' },
+        { value: 'slow', label: 'Over 60 days' },
+      ] },
+  ];
 
   const base = company ? `/v1/companies/${encodeURIComponent(company.tallyGuid)}` : null;
   const p = useApi<Pulse>(base && `${base}/pulse?days=${window}`,
@@ -130,6 +155,7 @@ export default function PulsePage() {
           </div>
           <Card className="mb-2">
             <div className="overflow-x-auto">
+              <Filters specs={payerSpecs} values={pf} onChange={setPf} />
               <table className="w-full min-w-[560px] text-sm">
                 <thead>
                   <tr className="border-b border-line text-left text-xs uppercase
@@ -143,7 +169,7 @@ export default function PulsePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {payers.payers.map((x) => (
+                  {payers.payers.filter((x) => matches(x, payerSpecs, pf)).map((x) => (
                     <tr key={x.party} className="border-b border-slate-50 last:border-0">
                       <td className="py-2 pr-3 text-ink">{x.party}</td>
                       <td className="py-2 pr-3 text-right text-muted tabular-nums">
