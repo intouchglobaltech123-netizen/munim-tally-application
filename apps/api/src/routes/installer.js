@@ -24,14 +24,41 @@ const { bad } = require('../lib/http');
  * put in a file somebody might email to themselves.
  */
 
-const SCRIPT = path.join(__dirname, '..', '..', '..', '..', 'connector-ps', 'Munim-Connector.ps1');
+/*
+ * Where the connector script is, in both places this runs.
+ *
+ * The API serves this file, so it has to be inside apps/api to be deployed:
+ * the service builds from that directory and nothing above it exists in the
+ * container. Reaching four levels up to connector-ps/ worked on a developer's
+ * machine, where the whole repository is present, and could never work in
+ * production - the download failed with "the installer is not available on
+ * this server" while every test passed.
+ *
+ * assets/ is the shipped copy and is checked first. The repository copy stays
+ * the one people edit, and is the fallback so a developer editing it does not
+ * have to remember to copy it before trying the download. A test keeps the two
+ * identical.
+ */
+const SCRIPT_CANDIDATES = [
+  process.env.MUNIM_CONNECTOR_SCRIPT,
+  path.join(__dirname, '..', '..', 'assets', 'Munim-Connector.ps1'),
+  path.join(__dirname, '..', '..', '..', '..', 'connector-ps', 'Munim-Connector.ps1'),
+].filter(Boolean);
+
+const SCRIPT = SCRIPT_CANDIDATES.find((p) => {
+  try { return fs.existsSync(p); } catch { return false; }
+}) ?? SCRIPT_CANDIDATES[SCRIPT_CANDIDATES.length - 1];
 
 
 /** The connector script as shipped, before it is personalised. */
 function readTemplate() {
   try {
     return fs.readFileSync(SCRIPT, 'utf8');
-  } catch {
+  } catch (e) {
+    // Say where it looked. The one time this fired it was a path problem, and
+    // "not available" sent us looking at permissions and downloads instead.
+    console.error('  installer script missing. Tried:\n   '
+      + SCRIPT_CANDIDATES.join('\n   ') + `\n  (${e.message})`);
     throw bad('INSTALLER_UNAVAILABLE', 'The installer is not available on this server.');
   }
 }
@@ -193,7 +220,11 @@ async function download(ctx) {
   let script;
   try {
     script = fs.readFileSync(SCRIPT, 'utf8');
-  } catch {
+  } catch (e) {
+    // Say where it looked. The one time this fired it was a path problem, and
+    // "not available" sent us looking at permissions and downloads instead.
+    console.error('  installer script missing. Tried:\n   '
+      + SCRIPT_CANDIDATES.join('\n   ') + `\n  (${e.message})`);
     throw bad('INSTALLER_UNAVAILABLE', 'The installer is not available on this server.');
   }
 
@@ -329,4 +360,8 @@ async function publicScript(ctx, code) {
   };
 }
 
-module.exports = { download, oneLiner, publicScript, cloudUrlFor, personalise };
+module.exports = {
+  download, oneLiner, publicScript, cloudUrlFor, personalise,
+  // Exposed so a test can assert the resolved path exists in production too.
+  scriptPath: () => SCRIPT,
+};

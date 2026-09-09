@@ -9,6 +9,7 @@
   },
   "scripts": {
     "start": "node src/index.js",
+    "sync:connector": "cp ../../connector-ps/Munim-Connector.ps1 assets/Munim-Connector.ps1",
     "migrate": "node src/migrate.js",
     "test": "node --test \"test/**/*.test.js\""
   },
