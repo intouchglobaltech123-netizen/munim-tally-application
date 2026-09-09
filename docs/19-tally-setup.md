@@ -64,21 +64,18 @@ lkp-agent check --tally http://<host>:9000
 
 ## Step 3 — Put data in it
 
-You do not have to type vouchers by hand:
+Enter a few vouchers in Tally by hand, or connect a company that already has
+them.
 
-```bash
-node tools/seed-tally.js --tally http://172.21.128.1:9000
-```
+There used to be a `tools/seed-tally.js` here that wrote sample invoices
+straight into a company. It was removed: it is the only thing in this repo that
+could ever have written into somebody's real books, and the risk of pointing it
+at the wrong company outweighed the convenience of not typing five invoices.
 
-It creates 8 customer ledgers (bill-wise on), a Sales ledger, stock items,
-sales invoices across the last 5 months each with a bill reference, and receipts
-against about a third of them — so **outstanding looks like a real book**
-instead of every invoice ever raised.
-
-> ⚠️ **This tool writes to Tally.** The Munim connector never does — that is
-> enforced by a test (`TestNoRequestCanWriteToTally`). `tools/seed-tally.js` is
-> a separate developer tool, deliberately kept outside `connector/`. Point it
-> only at a test company you created. Never at real books.
+Nothing else in Munim writes to Tally on its own. Reads are export-only, which
+is enforced by a test (`TestNoRequestCanWriteToTally`). Vouchers you create in
+the app are the one exception, they only go across after an owner turns writes
+on for that business, and that setting is off until somebody turns it on.
 
 ### Educational mode
 

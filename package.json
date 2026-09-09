@@ -6,7 +6,6 @@
     "api:migrate": "wsl -e bash -lic \"cd apps/api; node src/migrate.js\"",
     "web": "corepack pnpm --filter web dev",
     "mobile": "pnpm --filter mobile start",
-    "tally:seed": "node tools/seed-tally.js",
     "connector:test": "cd connector && go test ./...",
     "connector:build": "cd connector && GOOS=windows GOARCH=amd64 go build -trimpath -ldflags=\"-s -w\" -o dist/Munim.exe ./cmd/lkp-agent",
     "sign": "powershell -ExecutionPolicy Bypass -File ./scripts/dev-sign.ps1",

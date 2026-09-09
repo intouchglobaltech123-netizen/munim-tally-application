@@ -709,7 +709,7 @@ async function start() {
       const { rows: org } = await query(
         `INSERT INTO orgs (name, plan, features, max_connectors, max_companies)
          VALUES ('Munim Technologies', 'internal',
-                 '{"reminders":true,"multiCompany":true,"export":true,"api":true}'::jsonb,
+                 '{"reminders":true,"multiCompany":true,"export":true}'::jsonb,
                  99, 99)
          RETURNING id`);
       await query(

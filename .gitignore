@@ -21,3 +21,6 @@ connector/*.exe
 apps/web/tmp/
 apps/web/tsconfig.tsbuildinfo
 node_modules_broken/
+connector-ps/.live/
+connector/.demo-home/
+connector/.flow-*/
