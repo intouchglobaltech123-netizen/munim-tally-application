@@ -659,6 +659,24 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     console.error(`  ${req.method} ${url.pathname} ->`, e);
+
+    /*
+     * A timeout is worth saying out loud.
+     *
+     * 55P03 and 57014 are Postgres giving up on a lock or a statement, which
+     * is the pool's timeouts doing their job. Reporting that as "something
+     * went wrong on our side" throws away the one useful fact - that this is
+     * contention and trying again in a moment usually works - and turns a
+     * transient stall into an unexplained failure.
+     */
+    if (e && (e.code === '55P03' || e.code === '57014')) {
+      fail(res, 503, 'BUSY',
+        'The server was waiting on something that did not finish. '
+        + 'Please try that again in a moment.');
+      log(req, url, 503, started);
+      return;
+    }
+
     fail(res, 500, 'INTERNAL', 'Something went wrong on our side.');
     log(req, url, 500, started);
   }

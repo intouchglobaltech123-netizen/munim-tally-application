@@ -31,10 +31,33 @@ const CONNECTION =
 const wantsSsl = /[?&]sslmode=(require|verify-ca|verify-full)/.test(CONNECTION)
   || process.env.PGSSLMODE === 'require';
 
+/*
+ * Nothing waits for ever.
+ *
+ * A query blocked behind somebody else's row lock does not fail, it waits -
+ * and Postgres will happily wait until the process is restarted. Sign-in hit
+ * exactly that: it revokes the user's other sessions, which takes a lock on
+ * their rows, and one abandoned transaction holding those rows is enough to
+ * hang that one account's sign-in and nobody else's. From the outside it looks
+ * like the server "did not answer", which is true and completely unhelpful.
+ *
+ * lock_timeout is the short one on purpose: waiting on a lock is almost always
+ * contention rather than work, and failing in ten seconds with a message beats
+ * a spinner. statement_timeout is the long stop for a query that is genuinely
+ * running - a big report on a large book is allowed to be slow.
+ *
+ * idle_in_transaction_session_timeout is what stops this recurring: a
+ * connection that opened a transaction and then stopped doing anything is the
+ * thing that holds the locks, and it is now closed rather than left there.
+ */
 const pool = new Pool({
   connectionString: CONNECTION,
   max: Number(process.env.PG_POOL || 10),
   idleTimeoutMillis: 30_000,
+  statement_timeout: Number(process.env.PG_STATEMENT_TIMEOUT_MS || 20_000),
+  lock_timeout: Number(process.env.PG_LOCK_TIMEOUT_MS || 10_000),
+  idle_in_transaction_session_timeout:
+    Number(process.env.PG_IDLE_TX_TIMEOUT_MS || 30_000),
   ...(wantsSsl ? { ssl: { rejectUnauthorized: false } } : {}),
 });
 
@@ -77,6 +100,17 @@ async function migrate() {
     if (done.has(file)) continue;
     const sql = fs.readFileSync(path.join(dir, file), 'utf8');
     await tx(async (c) => {
+      /*
+       * Migrations opt out of the pool's timeouts.
+       *
+       * Those exist to stop one request hanging the app. A migration is not a
+       * request: a backfill across every voucher in a large database is
+       * allowed to take minutes, and being cut off at twenty seconds would
+       * leave the schema half-applied and the service unable to boot. LOCAL,
+       * so it lasts exactly as long as this transaction.
+       */
+      await c.query('SET LOCAL statement_timeout = 0');
+      await c.query('SET LOCAL lock_timeout = 0');
       await c.query(sql);
       await c.query('INSERT INTO schema_migrations (name) VALUES ($1)', [file]);
     });

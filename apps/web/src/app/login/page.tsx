@@ -104,8 +104,10 @@ export default function LoginPage() {
             </p>
 
             {/* Google requires their own rendered button, not a styled div.
-                min-w-0 so the flex parent may shrink it rather than overflow. */}
-            <div ref={buttonRef} className="flex min-w-0 justify-center overflow-x-auto" />
+                No overflow escape hatch here on purpose: a scrollbar under the
+                button means it was drawn too wide, and hiding that behind a
+                scroll is how it went unnoticed. It has to fit. */}
+            <div ref={buttonRef} className="flex w-full min-w-0 justify-center" />
 
             {busy ? (
               <p className="mt-4 text-center text-sm text-muted">Signing you in…</p>

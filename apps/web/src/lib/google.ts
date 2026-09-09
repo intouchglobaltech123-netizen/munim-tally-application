@@ -115,6 +115,10 @@ export function buttonWidth(available: number): number {
  * Google requires *their* rendered button rather than a styled div of our own -
  * it is what carries the branding and the click they will accept.
  */
+let initialisedFor: string | null = null;
+let latestOnToken: (t: string) => void = () => {};
+let latestOnError: (m: string) => void = () => {};
+
 export async function renderGoogleButton(
   el: HTMLElement,
   clientId: string,
@@ -131,29 +135,46 @@ export async function renderGoogleButton(
   const id = window.google?.accounts?.id;
   if (!id) { onError('Google sign-in did not load. Reload the page.'); return; }
 
+  latestOnToken = onToken;
+  latestOnError = onError;
   watchForGsiComplaints(onError);
 
-  id.initialize({
-    client_id: clientId,
-    callback: (r) => {
-      if (r.credential) onToken(r.credential);
-      else onError('Google did not return a sign-in token.');
-    },
-    // Never sign somebody in silently: shop owners often have a personal and a
-    // business account, and picking the wrong one puts books under the wrong login.
-    auto_select: false,
-    cancel_on_tap_outside: true,
-    /*
-     * Both of these are about phones.
-     *
-     * Safari's tracking prevention blocks the third-party storage the popup
-     * flow relies on; itp_support is Google's route around that. FedCM is what
-     * Chrome is moving everyone to, and without it the prompt is increasingly
-     * refused outright on mobile Chrome.
-     */
-    itp_support: true,
-    use_fedcm_for_prompt: true,
-  });
+  /*
+   * initialize() once per client, renderButton as often as we like.
+   *
+   * Calling initialize again replaces the callback Google will fire, and it
+   * warns as much: "called multiple times ... only the last initialized
+   * instance will be used". A button drawn against an earlier call then hands
+   * its credential to a callback that is no longer the live one, so the tap
+   * appears to do nothing at all. Redrawing on resize made that happen on
+   * every rotation.
+   */
+  if (initialisedFor !== clientId) {
+    id.initialize({
+      client_id: clientId,
+      callback: (r) => {
+        // Read through the ref so a redraw can replace the handler without
+        // re-initialising: this closure belongs to the one live instance.
+        if (r.credential) latestOnToken(r.credential);
+        else latestOnError('Google did not return a sign-in token.');
+      },
+      // Never sign somebody in silently: shop owners often have a personal and
+      // a business account, and the wrong one puts books under the wrong login.
+      auto_select: false,
+      cancel_on_tap_outside: true,
+      /*
+       * Both of these are about phones.
+       *
+       * Safari's tracking prevention blocks the third-party storage the popup
+       * flow relies on; itp_support is Google's route around that. FedCM is
+       * what Chrome is moving everyone to, and without it the prompt is
+       * increasingly refused outright on mobile Chrome.
+       */
+      itp_support: true,
+      use_fedcm_for_prompt: true,
+    });
+    initialisedFor = clientId;
+  }
 
   el.replaceChildren();
   id.renderButton(el, {
