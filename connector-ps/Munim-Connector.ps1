@@ -28,7 +28,7 @@ param(
   [string]$Command = 'check',
 
   [string]$Tally,           # e.g. http://localhost:9000
-  [string]$Cloud,           # e.g. https://api.munim.app
+  [string]$Cloud,           # e.g. https://munim-tally-application-production.up.railway.app
   # Baked into the installer the customer downloads, so pairing needs no typing
   # and cannot be mistyped. Short-lived, and useless once used.
   [string]$Code,
@@ -133,7 +133,7 @@ $script:LogPath = Join-Path $script:DataDir 'connector.log'
 
 function Get-Config {
   $cfg = [ordered]@{
-    cloudUrl     = 'https://api.munim.app'
+    cloudUrl     = 'https://munim-tally-application-production.up.railway.app'
     tallyUrl     = 'http://localhost:9000'
     tallyVersion = 'prime'
     deviceToken  = ''

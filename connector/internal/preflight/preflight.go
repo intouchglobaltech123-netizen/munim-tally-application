@@ -67,7 +67,7 @@ type Options struct {
 
 func DefaultOptions() Options {
 	return Options{
-		CloudURL:   "https://api.munim.app",
+		CloudURL:   "https://munim-tally-application-production.up.railway.app",
 		TallyPorts: []int{9000, 9001, 9002}, // users move it when 9000 is taken
 		TallyHost:  "localhost",
 	}

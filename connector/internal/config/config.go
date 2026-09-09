@@ -70,7 +70,7 @@ func Path() string { return filepath.Join(Dir(), "config.json") }
 
 func Load() (*Config, error) {
 	c := &Config{
-		CloudURL:     "https://api.munim.app",
+		CloudURL:     "https://munim-tally-application-production.up.railway.app",
 		TallyURL:     "http://localhost:9000",
 		TallyVersion: "prime",
 		IntervalSecs: 30,
