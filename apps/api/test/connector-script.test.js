@@ -314,6 +314,45 @@ test('the scheduled task covers all four ways a shop PC comes back', () => {
   assert.match(install, /-RepetitionInterval/);
 });
 
+test('the background watcher never opens a window', () => {
+  /*
+   * powershell.exe is a console program: Windows opens its window before
+   * -WindowStyle Hidden can hide it. Every five-minute retry flashed a terminal
+   * open and shut on the owner's screen. Everything that starts the watcher
+   * automatically must go through wscript.exe instead.
+   */
+  const install = src.slice(src.indexOf('function Install-Task'),
+                            src.indexOf('function Uninstall-Task'));
+  assert.match(install, /New-ScheduledTaskAction -Execute 'wscript\.exe'/);
+  assert.ok(!/New-ScheduledTaskAction -Execute 'powershell\.exe'/.test(install),
+    'the scheduled task starts a console window');
+  assert.ok(!/Start-Process powershell\.exe/.test(install),
+    'starting the watcher after install flashes a console window');
+  assert.ok(!/cmd\.exe \/c start/.test(install),
+    'the Run entry starts a console window');
+  assert.match(install, /sh\.Run cmd, 0, True/, 'the launcher does not hide PowerShell');
+});
+
+test('uninstall can actually find the running watcher', () => {
+  // Get-Process objects have no CommandLine in Windows PowerShell 5.1.
+  const uninstall = src.slice(src.indexOf('function Uninstall-Task'),
+                              src.indexOf('function Show-Status'));
+  assert.ok(!/^\s*Get-Process\b/m.test(uninstall), 'Get-Process cannot filter on CommandLine');
+  assert.match(uninstall, /Get-CimInstance Win32_Process/);
+  assert.match(uninstall, /wscript\.exe/, 'the looping launcher restarts the watcher');
+});
+
+test('an idle pass does not export every ledger and item again', () => {
+  /*
+   * The detail requests have no AlterID filter, so each is a full export.
+   * Every three seconds that slowed Tally for the person using it.
+   */
+  const sync = src.slice(src.indexOf('function Invoke-Sync'));
+  const gate = sync.indexOf('if ($mastersChanged)');
+  const detail = sync.indexOf('New-DetailRequest');
+  assert.ok(gate >= 0 && detail > gate, 'detail requests run on every pass');
+});
+
 test('the task survives a laptop on battery', () => {
   // Task Scheduler refuses to start tasks on battery by default, which is
   // every laptop in every shop.

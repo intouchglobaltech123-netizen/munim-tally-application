@@ -1182,30 +1182,6 @@ function Invoke-Sync($cfg, [string]$trigger = 'auto') {
     $records = New-Object System.Collections.ArrayList
 
     <#
-      Master detail, best effort.
-
-      Wrapped for the same reason the company profile is: these ask Tally for
-      fields whose availability varies by version, and a party without a GSTIN
-      on screen is a cosmetic problem. The ledgers and vouchers below must sync
-      regardless.
-    #>
-    foreach ($dt in @('Ledger', 'StockItem')) {
-      try {
-        $ddoc = Invoke-Tally $cfg (New-DetailRequest $dt $co.Name $script:DetailMethods[$dt])
-        foreach ($n in $ddoc.SelectNodes("//$($dt.ToUpper())")) {
-          $drec = if ($dt -eq 'Ledger') {
-            ConvertTo-LedgerDetailRecord $n $co.Guid
-          } else {
-            ConvertTo-StockDetailRecord $n $co.Guid
-          }
-          if ($drec.guid) { [void]$records.Add($drec) }
-        }
-      } catch {
-        Write-Log ("{0} detail skipped for {1}: {2}" -f $dt, $co.Name, $_.Exception.Message)
-      }
-    }
-
-    <#
       The profile, best effort.
 
       Wrapped because it is the only request asking Tally for fields whose
@@ -1237,6 +1213,40 @@ function Invoke-Sync($cfg, [string]$trigger = 'auto') {
         if (-not $rec.guid) { continue }
         [void]$records.Add($rec)
         if ($rec.alterId -gt $masterHigh) { $masterHigh = $rec.alterId }
+      }
+    }
+
+    <#
+      Master detail, best effort - and only when a master actually changed.
+
+      These requests have no AlterID filter: each one exports every ledger or
+      every stock item in the book. Run on every pass they cost Tally a full
+      export every few seconds, which slows Tally for the person typing in it
+      and for any other program reading the same gateway. Editing a ledger's
+      GSTIN or address raises its AlterID, so the collection above already tells
+      us when there is something new to fetch.
+
+      Wrapped for the same reason the company profile is: these ask Tally for
+      fields whose availability varies by version, and a party without a GSTIN
+      on screen is a cosmetic problem. The ledgers and vouchers must sync
+      regardless.
+    #>
+    $mastersChanged = ([long]$state.master -eq 0) -or ($masterHigh -gt [long]$state.master)
+    if ($mastersChanged) {
+      foreach ($dt in @('Ledger', 'StockItem')) {
+        try {
+          $ddoc = Invoke-Tally $cfg (New-DetailRequest $dt $co.Name $script:DetailMethods[$dt])
+          foreach ($n in $ddoc.SelectNodes("//$($dt.ToUpper())")) {
+            $drec = if ($dt -eq 'Ledger') {
+              ConvertTo-LedgerDetailRecord $n $co.Guid
+            } else {
+              ConvertTo-StockDetailRecord $n $co.Guid
+            }
+            if ($drec.guid) { [void]$records.Add($drec) }
+          }
+        } catch {
+          Write-Log ("{0} detail skipped for {1}: {2}" -f $dt, $co.Name, $_.Exception.Message)
+        }
       }
     }
 
@@ -2086,8 +2096,21 @@ function Install-Task {
   # with no changes returns nothing.
   $psArgs = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$script`" watch"
 
+  <#
+    Started through wscript.exe, never powershell.exe directly.
+
+    powershell.exe is a console program, so Windows opens a console window for
+    it BEFORE -WindowStyle Hidden runs. Every five-minute retry found the
+    watcher already running and exited at once, so a black window flashed open
+    and shut on the owner's screen, again and again, for no visible reason.
+    wscript.exe has no console, and Run with window style 0 starts PowerShell
+    with none either.
+  #>
+  $launcher = Join-Path $script:DataDir 'Munim-Start.vbs'
+
   try {
-    $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $psArgs
+    Write-HiddenLauncher $launcher $psArgs $false
+    $action = New-ScheduledTaskAction -Execute 'wscript.exe' -Argument "//B //NoLogo `"$launcher`""
 
     <#
       Three triggers, because a shop computer fails in three different ways.
@@ -2167,28 +2190,24 @@ and EventID=1]]
       Startup folder  - starts it at every login, including after a reboot
       Run registry    - the same, and survives the Startup folder being tidied
 
-    Plus a watchdog inside the .cmd: if the watcher ever exits, it waits a
+    Plus a watchdog inside the launcher: if the watcher ever exits, it waits a
     minute and starts it again, for as long as the machine is on. The mutex in
-    the watcher makes a duplicate harmless.
+    the watcher makes a duplicate harmless. A .vbs rather than the old .cmd, so
+    there is no minimised console sitting on the taskbar and nothing flashes.
   #>
+  $startup = $null
   try {
     $startup = [Environment]::GetFolderPath('Startup')
-    $cmdPath = Join-Path $startup 'Munim.cmd'
-    @(
-      '@echo off',
-      'rem Keeps Munim syncing. Delete this file to stop it.',
-      'title Munim',
-      ':loop',
-      ('powershell.exe ' + $psArgs),
-      'timeout /t 60 /nobreak >nul',
-      'goto loop'
-    ) -join "`r`n" | Set-Content $cmdPath -Encoding ASCII
+    # An earlier version kept a visible console loop here.
+    Remove-Item (Join-Path $startup 'Munim.cmd') -Force -ErrorAction SilentlyContinue
+    $vbsPath = Join-Path $startup 'Munim.vbs'
+    Write-HiddenLauncher $vbsPath $psArgs $true
 
     # A second way in, in case the Startup folder is cleaned out.
     try {
       $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
       Set-ItemProperty -Path $runKey -Name 'Munim' `
-        -Value ('cmd.exe /c start "" /min "' + $cmdPath + '"') -ErrorAction Stop
+        -Value ('wscript.exe //B //NoLogo "' + $vbsPath + '"') -ErrorAction Stop
     } catch {
       Write-Log "could not add the Run entry: $($_.Exception.Message)"
     }
@@ -2206,20 +2225,62 @@ and EventID=1]]
 
   # Start it now, so the customer does not have to log out and back in.
   try {
-    Start-Process powershell.exe -ArgumentList $psArgs -WindowStyle Hidden | Out-Null
+    Start-Process wscript.exe -ArgumentList "//B //NoLogo `"$vbsPath`"" | Out-Null
   } catch { }
+}
+
+<#
+  A tiny .vbs that starts PowerShell with no window at all.
+
+  With -Loop it keeps restarting the watcher a minute after it exits; without,
+  it waits for the watcher to finish, so the scheduled task stays "running" for
+  as long as the watcher does and IgnoreNew keeps meaning what it says.
+
+  Written UTF-16 with a BOM, which wscript reads, so a Windows user name with
+  non-English letters in the path still works.
+#>
+function Write-HiddenLauncher([string]$path, [string]$psArgs, [bool]$loop) {
+  $command = ('powershell.exe ' + $psArgs).Replace('"', '""')
+  $lines = @(
+    "' Starts Munim in the background with no window. Delete this file to stop it.",
+    'Set sh = CreateObject("WScript.Shell")',
+    "cmd = `"$command`"",
+    'Do',
+    '  sh.Run cmd, 0, True'
+  )
+  if ($loop) {
+    $lines += '  WScript.Sleep 60000'
+    $lines += 'Loop'
+  } else {
+    $lines += 'Loop While False'
+  }
+  ($lines -join "`r`n") | Set-Content -Path $path -Encoding Unicode
 }
 
 function Uninstall-Task {
   # Remove every way it starts, since any of them could have been used.
   Unregister-ScheduledTask -TaskName $script:TaskName -Confirm:$false -ErrorAction SilentlyContinue
-  $cmdPath = Join-Path ([Environment]::GetFolderPath('Startup')) 'Munim.cmd'
-  Remove-Item $cmdPath -Force -ErrorAction SilentlyContinue
+  $startup = [Environment]::GetFolderPath('Startup')
+  Remove-Item (Join-Path $startup 'Munim.cmd') -Force -ErrorAction SilentlyContinue
+  Remove-Item (Join-Path $startup 'Munim.vbs') -Force -ErrorAction SilentlyContinue
+  Remove-Item (Join-Path $script:DataDir 'Munim-Start.vbs') -Force -ErrorAction SilentlyContinue
   Remove-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' `
     -Name 'Munim' -ErrorAction SilentlyContinue
-  Get-Process powershell -ErrorAction SilentlyContinue |
-    Where-Object { $_.CommandLine -like '*Munim-Connector*watch*' } |
-    Stop-Process -Force -ErrorAction SilentlyContinue
+
+  <#
+    The looping launcher first, or it starts the watcher again a minute later.
+
+    Get-CimInstance, not Get-Process: in Windows PowerShell 5.1 a process
+    object has no CommandLine, so the old filter matched nothing and the
+    watcher kept running after "uninstall".
+  #>
+  $me = $PID
+  Get-CimInstance Win32_Process -Filter "Name='wscript.exe'" -ErrorAction SilentlyContinue |
+    Where-Object { $_.CommandLine -like '*Munim*.vbs*' } |
+    ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+  Get-CimInstance Win32_Process -Filter "Name='powershell.exe' OR Name='pwsh.exe'" -ErrorAction SilentlyContinue |
+    Where-Object { $_.ProcessId -ne $me -and $_.CommandLine -like '*Munim-Connector*watch*' } |
+    ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
 
   Write-Host '  Munim will no longer start automatically. Your data is untouched.' -ForegroundColor Cyan
 }
