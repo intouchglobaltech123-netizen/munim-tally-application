@@ -40,8 +40,100 @@
   --warn: #9A6300;
   --warn-soft: #FFF4E0;
 
-  --background: var(--n-50);
+  --surface: #ffffff;
+  --canvas: var(--n-50);
+
+  --background: var(--canvas);
   --foreground: var(--n-900);
+
+  color-scheme: light;
+}
+
+/*
+ * Dark, done deliberately.
+ *
+ * Not an inversion. Every screen here is dense numeric tables, so the rules
+ * that matter are: the page is a deep neutral rather than black (black makes
+ * white figures vibrate), surfaces sit ABOVE the page rather than below it,
+ * and the greens are lifted - the emerald that reads as "bank" on white is
+ * nearly unreadable on a dark ground.
+ *
+ * Money keeps conventional red and green, brightened just enough to clear
+ * 4.5:1 on the dark surface. Somebody scanning a column for a loss must not
+ * have to think about the brand.
+ *
+ * Declared twice on purpose: once for the system preference, once for a person
+ * who chose dark explicitly. The :not([data-theme="light"]) guard is what lets
+ * the manual toggle win in both directions.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --emerald-900: #D8EDE2;
+    --emerald-800: #BFE2D1;
+    --emerald-700: #6ED3A2;
+    --emerald-600: #3FC084;
+    --emerald-500: #2FB877;
+    --emerald-100: #16301F;
+    --emerald-50:  #0F2318;
+
+    --gold-700: #E4C56A;
+    --gold-500: #D8B44A;
+    --gold-50:  #2A2312;
+
+    --n-900: #E9EFEB;
+    --n-700: #C3CFC9;
+    --n-500: #93A29B;
+    --n-300: #6C7A74;
+    --n-200: #27312C;
+    --n-100: #1C2521;
+    --n-50:  #131A17;
+
+    --positive: #34C784;
+    --positive-soft: #0E2A1D;
+    --negative: #FF6F64;
+    --negative-soft: #331715;
+    --warn: #E5A83E;
+    --warn-soft: #2E2210;
+
+    --surface: #151D19;
+    --canvas: #0B100E;
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --emerald-900: #D8EDE2;
+  --emerald-800: #BFE2D1;
+  --emerald-700: #6ED3A2;
+  --emerald-600: #3FC084;
+  --emerald-500: #2FB877;
+  --emerald-100: #16301F;
+  --emerald-50:  #0F2318;
+
+  --gold-700: #E4C56A;
+  --gold-500: #D8B44A;
+  --gold-50:  #2A2312;
+
+  --n-900: #E9EFEB;
+  --n-700: #C3CFC9;
+  --n-500: #93A29B;
+  --n-300: #6C7A74;
+  --n-200: #27312C;
+  --n-100: #1C2521;
+  --n-50:  #131A17;
+
+  --positive: #34C784;
+  --positive-soft: #0E2A1D;
+  --negative: #FF6F64;
+  --negative-soft: #331715;
+  --warn: #E5A83E;
+  --warn-soft: #2E2210;
+
+  --surface: #151D19;
+  --canvas: #0B100E;
+
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -63,8 +155,8 @@
   --color-faint: var(--n-300);
   --color-line:  var(--n-200);
   --color-line-soft: var(--n-100);
-  --color-surface: #ffffff;
-  --color-canvas: var(--n-50);
+  --color-surface: var(--surface);
+  --color-canvas: var(--canvas);
 
   --color-positive: var(--positive);
   --color-positive-soft: var(--positive-soft);
@@ -76,12 +168,6 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 }
-
-/*
- * No dark mode. A half-built dark theme looks worse than none, and every
- * screen here is dense financial tables where contrast has to be exact. Better
- * to do it deliberately later than to invert colours and hope.
- */
 
 body {
   background: var(--background);

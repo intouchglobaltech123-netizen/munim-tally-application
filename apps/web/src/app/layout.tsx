@@ -31,7 +31,20 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    /*
+     * suppressHydrationWarning, because the script below edits this very
+     * element before React arrives. The alternative is a white flash on every
+     * load for anybody who chose dark, which is the thing people notice.
+     */
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "try{var t=localStorage.getItem('munim.theme');"
+              + "if(t==='dark'||t==='light'){document.documentElement.dataset.theme=t}}catch(e){}",
+          }}
+        />
+      </head>
       <body className="bg-canvas text-ink antialiased">
         <AuthProvider>
           <Shell>{children}</Shell>

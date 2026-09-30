@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import NotificationBell from './NotificationBell';
 import GlobalSearch from './GlobalSearch';
+import ThemeToggle from './ThemeToggle';
 import {
   LayoutDashboard, Users, FileBarChart, MessageSquare, Settings,
   Building2, Server, KeyRound, Gauge, TrendingUp, ShoppingCart, Wallet,
@@ -321,6 +322,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           <div className="no-print mb-2 flex items-center justify-end gap-2">
             <GlobalSearch />
             <NotificationBell />
+            <ThemeToggle />
           </div>
           {children}
         </div>
