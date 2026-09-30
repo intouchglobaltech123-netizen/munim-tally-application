@@ -92,8 +92,14 @@ test('there is a download that no antivirus can mistake for a dropper', () => {
   const build = routeSrc.slice(routeSrc.indexOf('function buildInstaller'),
                               routeSrc.indexOf('const bat = ['));
   assert.match(build, /format.*ps1/, 'no plain-script download');
-  assert.match(build, /Munim-Connector-\$\{safeName\}\.ps1/,
+  assert.match(build, /filename="Munim-Connector\.ps1"/,
     'the plain script is not offered as a .ps1 file');
-  // It must be the real script, not a second copy that can drift from it.
-  assert.match(build, /personalise\(readTemplate\(\)/);
+  /*
+   * Untouched, and that is the requirement: an Authenticode signature covers
+   * the bytes, so a file personalised per customer can never be signed - and
+   * signing is the only thing that ends the argument with antivirus for good.
+   */
+  assert.match(build, /readTemplate\(\)\.replace/);
+  assert.ok(!/personalise\(readTemplate\(\)/.test(build),
+    'the signable download is rewritten per customer, so it cannot be signed');
 });

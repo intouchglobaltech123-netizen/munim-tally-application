@@ -31,6 +31,40 @@ export default function ConnectPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  /*
+   * Approving a code typed on the Tally PC.
+   *
+   * The .bat carries its own code, so this is never needed for that route. The
+   * plain script cannot carry one - it is the same file for every customer, so
+   * that it can be signed - and asks the cloud for a code instead. Somebody has
+   * to say yes to that code, and making them reach for their phone to do it
+   * would be a poor answer when they are already signed in here.
+   */
+  const [code, setCode] = useState('');
+  const [approving, setApproving] = useState(false);
+  const [approved, setApproved] = useState(false);
+  const [approveErr, setApproveErr] = useState<string | null>(null);
+
+  async function approve() {
+    setApproveErr(null); setApproving(true);
+    try {
+      const res = await fetch(`${API}/v1/auth/intent/approve`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${getToken() ?? ''}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ intentId: code.trim() }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body?.error?.message ?? 'That code could not be approved.');
+      setApproved(true); setCode('');
+    } catch (e) {
+      setApproveErr((e as Error).message);
+    } finally {
+      setApproving(false);
+    }
+  }
 
   async function download(format?: 'ps1') {
     setErr(null); setBusy(true);
@@ -189,8 +223,34 @@ export default function ConnectPage() {
                 2. <b>Right-click</b> the file → <b>Run with PowerShell</b>.
                 Do not double-click it: that opens Notepad.
               </li>
-              <li>3. Enter your licence key when it asks, as above.</li>
+              <li>3. Enter your licence key when it asks.</li>
+              <li>
+                4. It shows a <b>code</b>. Type that code below, or scan it in
+                the phone app.
+              </li>
             </ol>
+
+            <div className="mt-3 flex gap-2">
+              <input
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="int_xxxxxxxxxxxx"
+                className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-2
+                           text-sm text-ink placeholder:text-faint
+                           focus:border-brand-600 focus:outline-none"
+              />
+              <Button variant="ghost" onClick={approve} disabled={approving || !code.trim()}>
+                {approving ? 'Approving…' : 'Approve'}
+              </Button>
+            </div>
+            {approved ? (
+              <p className="mt-2 text-xs text-positive">
+                Approved. That computer connects within a few seconds.
+              </p>
+            ) : null}
+            {approveErr ? (
+              <p className="mt-2 text-xs text-negative">{approveErr}</p>
+            ) : null}
             <p className="mt-3 text-xs text-muted">
               Already quarantined? Open your antivirus, restore the file from
               quarantine, and tell it to allow{' '}

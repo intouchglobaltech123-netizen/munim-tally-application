@@ -295,6 +295,30 @@ None of that was necessary. The installer now:
 - **Leaves a Startup shortcut (`.lnk`) as the last resort only** — no registry
   entry, no loop.
 
+### When the .bat is blocked anyway (K7, on a real customer)
+
+K7 quarantined `Munim-Setup.bat` outright - "Suspicious Object in Program
+(ID709056)" - even with the download cradle gone. That is not a bug in the
+heuristic. A `.bat` arriving from the internet whose only job is to start
+PowerShell **is** the shape of a dropper, and nothing we write inside it
+changes that shape.
+
+So the Connect page offers a second route, and it is the one to reach for when
+a customer's antivirus objects:
+
+**Download the plain script (`?format=ps1`)**, then right-click →
+**Run with PowerShell**.
+
+- It is the connector itself, not a launcher: 2,400 commented lines that read
+  like the program they are.
+- It downloads nothing and runs nothing on the customer's behalf.
+- Windows' own "Run with PowerShell" verb sets the execution policy for that
+  process, so our file carries no bypass flag for a scanner to object to.
+- It is **byte-identical for every customer**, which is what makes it
+  signable - see below. With no code baked in, it asks the cloud for a pairing
+  code and shows it; the owner approves that code in the phone app or in the
+  box on the Connect page.
+
 ### What is still not solved
 
 The `.bat` and the `.ps1` are **unsigned**, so:
@@ -304,17 +328,33 @@ The `.bat` and the `.ps1` are **unsigned**, so:
 - An aggressive scanner may still quarantine on reputation alone, particularly
   Quick Heal and K7, which are common in Indian shops.
 
-The only real fixes, in order of cost:
+The only real fixes, in order of how fast they help:
 
-1. **Buy a code-signing certificate** and sign the `.ps1` with
-   `Set-AuthenticodeSignature`. An OV certificate is roughly ₹15–25k a year and
-   earns reputation over weeks; an EV one is more and clears SmartScreen at
-   once. This is the answer for a product that ships to strangers.
-2. **Submit a false-positive report** to whichever vendor blocked it. Microsoft
-   takes them at the Microsoft Security Intelligence portal, and usually turns
-   a fix around in a day or two. Quick Heal and K7 have their own forms.
+1. **Report the false positive.** Free, and the fastest thing that actually
+   works: vendors turn these around in a day or two.
+   - K7: raise a ticket at `support.k7computing.com` with Category
+     **False Positive**, or email `reportfp@labs.k7computing.com` /
+     `support@k7computing.com`, subject "False Positive: file being detected by
+     K7". Attach the file and say it is your own product.
+   - Quick Heal and Microsoft Defender each have the same kind of form. Do all
+     three: the detections are independent.
+2. **Buy a code-signing certificate** and run `scripts\sign-connector.ps1`.
+   This is the answer for a product that ships to strangers - an OV certificate
+   is roughly ₹15–25k a year and earns reputation over weeks; EV costs more and
+   clears SmartScreen at once. Since 2023 the private key has to live on a
+   hardware token or a cloud HSM, so allow a few days for delivery and setup.
+
+   **Microsoft's cheap route is not open to India.** Artifact Signing (formerly
+   Trusted Signing) is $9.99/month, but public-trust certificates are issued
+   only to organizations in the US, Canada, the EU, the UK, Australia, New
+   Zealand, Japan, South Korea, Singapore, Switzerland, Norway and Israel - and
+   to individual developers only in the US and Canada. Use a commercial CA
+   instead.
 3. **Ask the customer to allow the folder**, `%ProgramData%\Munim`, as an
    exclusion. This works today and needs nothing from us, but asking a shop
-   owner to add an antivirus exclusion is asking them to lower a defence — fine
-   for a pilot customer you are on the phone with, not something to put in a
-   public install guide.
+   owner to lower a defence is fine for a pilot customer you are on the phone
+   with and wrong to put in a public install guide.
+
+Why the certificate is the end of it: a signature covers the file's bytes, and
+that is why the `?format=ps1` download is the same file for everyone. The
+`.bat` route personalises its script per customer, which can never be signed.

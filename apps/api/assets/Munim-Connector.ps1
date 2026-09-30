@@ -2381,6 +2381,26 @@ function Show-Status($cfg) {
 
 $cfg = Get-Config
 
+<#
+  A machine that has never been connected wants connecting, not auditing.
+
+  The default command is `check` because that is the right answer for a machine
+  that is already running. On one that has never paired it is the wrong answer:
+  the owner double-clicked, or used Windows' "Run with PowerShell", and got a
+  report instead of an install.
+
+  This also removes the last reason to rewrite the file per customer. A signed
+  script cannot be personalised - editing a single byte breaks the signature -
+  so the same file has to be right for everybody, and pairing asks the cloud
+  for a code and waits for the owner to approve it.
+
+  An explicit `check` is still honoured: it is the parameter being ABSENT, not
+  its value, that means "I have not decided".
+#>
+if (-not $PSBoundParameters.ContainsKey('Command') -and -not $cfg.deviceToken) {
+  $Command = 'setup'
+}
+
 switch ($Command) {
   'check' { Invoke-Check $cfg }
   'status' { Show-Status $cfg }

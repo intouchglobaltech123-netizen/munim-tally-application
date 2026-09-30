@@ -258,13 +258,25 @@ function buildInstaller(ctx, s, code) {
    * still the flow that loses nobody, and most machines never block it.
    */
   if (ctx.url.searchParams.get('format') === 'ps1') {
-    const safeName = s.org.name.replace(/[^A-Za-z0-9]+/g, '-').slice(0, 24);
+    /*
+     * Byte for byte the file in assets/, personalised for nobody.
+     *
+     * That is the point. An Authenticode signature covers the file's bytes, so
+     * a script rewritten per customer can never be signed - and signing is the
+     * only thing that actually ends this argument with antivirus. Serving the
+     * identical file means the day a certificate is bought, signing it once in
+     * assets/ signs it for every customer.
+     *
+     * Nothing is lost by dropping the baked-in code: with none, the connector
+     * asks the cloud for one and shows it, and the owner approves it in the app
+     * or on the Connect page.
+     */
     return {
       _raw: {
-        body: personalise(readTemplate(), cloud, code, s.org.name),
+        body: readTemplate().replace(/^\uFEFF/, ''),
         contentType: 'text/plain; charset=utf-8',
         headers: {
-          'Content-Disposition': `attachment; filename="Munim-Connector-${safeName}.ps1"`,
+          'Content-Disposition': 'attachment; filename="Munim-Connector.ps1"',
         },
       },
     };
