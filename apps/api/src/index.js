@@ -78,7 +78,19 @@ const { ipPrefix } = require('./lib/audit');
 const PORT = Number(process.env.PORT || 8080);
 
 const routes = {
-  'GET  /v1/health': async () => ({ ok: true, service: 'munim-api' }),
+  /*
+   * The commit, so "is my fix deployed?" is answerable without guessing.
+   *
+   * Railway injects RAILWAY_GIT_COMMIT_SHA on every build. Without this, a
+   * connector fix was tested against a server that had not picked it up yet,
+   * and the result read as "the fix did not work".
+   */
+  'GET  /v1/health': async () => ({
+    ok: true,
+    service: 'munim-api',
+    version: (process.env.RAILWAY_GIT_COMMIT_SHA
+      || process.env.GIT_COMMIT_SHA || 'dev').slice(0, 7),
+  }),
 
   'GET  /v1/auth/config': async () => authRoutes.authConfig(),
   'POST /v1/auth/google': authRoutes.googleSignIn,

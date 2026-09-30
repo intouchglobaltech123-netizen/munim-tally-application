@@ -32,12 +32,13 @@ export default function ConnectPage() {
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
-  async function download() {
+  async function download(format?: 'ps1') {
     setErr(null); setBusy(true);
     try {
-      const res = await fetch(`${API}/v1/connector/installer`, {
-        headers: { Authorization: `Bearer ${getToken() ?? ''}` },
-      });
+      const res = await fetch(
+        `${API}/v1/connector/installer${format ? `?format=${format}` : ''}`, {
+          headers: { Authorization: `Bearer ${getToken() ?? ''}` },
+        });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body?.error?.message ?? 'Could not prepare your setup file.');
@@ -123,7 +124,7 @@ export default function ConnectPage() {
               It is made for {me?.org?.name ? <b>{me.org.name}</b> : 'your business'} and
               works only for your account.
               <div className="mt-3">
-                <Button onClick={download} disabled={busy}>
+                <Button onClick={() => download()} disabled={busy}>
                   {busy ? 'Preparing…' : 'Download setup file'}
                 </Button>
               </div>
@@ -159,6 +160,45 @@ export default function ConnectPage() {
         </Card>
 
         <div className="space-y-5">
+          {/*
+            * The antivirus card.
+            *
+            * K7 quarantined the .bat on a real customer's machine, and a shop
+            * owner who sees "Suspicious Object - Quarantined" stops there and
+            * rings us. Telling them to switch their antivirus off would be
+            * advice we should not give, so the second route is a file that does
+            * not look like a dropper: the script itself, run by Windows' own
+            * menu item.
+            */}
+          <Card className="border-warn/40">
+            <h3 className="text-sm font-semibold">If your antivirus blocks the file</h3>
+            <p className="mt-2 text-sm text-body">
+              Some antivirus programs (K7 and Quick Heal especially) quarantine
+              any <code className="rounded bg-line-soft px-1">.bat</code> file
+              that starts PowerShell, whoever made it. Use the plain script
+              instead — same setup, nothing for them to object to.
+            </p>
+            <div className="mt-3">
+              <Button variant="ghost" onClick={() => download('ps1')} disabled={busy}>
+                {busy ? 'Preparing…' : 'Download the plain script (.ps1)'}
+              </Button>
+            </div>
+            <ol className="mt-3 space-y-1.5 text-sm text-body">
+              <li>1. Save it on the Tally computer.</li>
+              <li>
+                2. <b>Right-click</b> the file → <b>Run with PowerShell</b>.
+                Do not double-click it: that opens Notepad.
+              </li>
+              <li>3. Enter your licence key when it asks, as above.</li>
+            </ol>
+            <p className="mt-3 text-xs text-muted">
+              Already quarantined? Open your antivirus, restore the file from
+              quarantine, and tell it to allow{' '}
+              <code className="rounded bg-line-soft px-1">C:\ProgramData\Munim</code>.
+              Munim only ever reads Tally — it cannot change your books.
+            </p>
+          </Card>
+
           <Card>
             <h3 className="text-sm font-semibold">If Windows warns you</h3>
             <p className="mt-2 text-sm text-body">

@@ -79,3 +79,21 @@ test('the downloaded file does not pipe remote code into iex', () => {
   assert.match(bat, /-OutFile/);
   assert.match(bat, /Unblock-File/);
 });
+
+test('there is a download that no antivirus can mistake for a dropper', () => {
+  /*
+   * K7 quarantined the .bat on a customer's machine: a downloaded .bat that
+   * starts PowerShell is the shape of a dropper, and no heuristic can tell
+   * ours from a real one. The escape hatch is the script itself, which Windows
+   * runs from its own "Run with PowerShell" menu item.
+   */
+  const routeSrc = fs.readFileSync(
+    path.join(__dirname, '..', 'src', 'routes', 'installer.js'), 'utf8');
+  const build = routeSrc.slice(routeSrc.indexOf('function buildInstaller'),
+                              routeSrc.indexOf('const bat = ['));
+  assert.match(build, /format.*ps1/, 'no plain-script download');
+  assert.match(build, /Munim-Connector-\$\{safeName\}\.ps1/,
+    'the plain script is not offered as a .ps1 file');
+  // It must be the real script, not a second copy that can drift from it.
+  assert.match(build, /personalise\(readTemplate\(\)/);
+});

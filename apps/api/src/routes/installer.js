@@ -240,6 +240,37 @@ function buildInstaller(ctx, s, code) {
   const cloud = cloudUrlFor(ctx);
 
   /*
+   * ?format=ps1 - the way in when antivirus eats the .bat.
+   *
+   * K7 quarantined Munim-Setup.bat on a customer's machine as a "Suspicious
+   * Object in Program". It is not wrong to be suspicious: a .bat downloaded
+   * from the internet that launches PowerShell is the commonest shape of a
+   * dropper, and no heuristic can tell ours from one.
+   *
+   * The script itself is a different proposition - 2,400 lines of commented
+   * PowerShell that reads like the program it is, with nothing downloaded and
+   * nothing executed on the customer's behalf. Windows' own "Run with
+   * PowerShell" menu item runs it, and that shell verb sets the execution
+   * policy for its own process, so the file carries no bypass flag of its own
+   * for a scanner to object to.
+   *
+   * Offered alongside the .bat rather than instead of it: double-clicking is
+   * still the flow that loses nobody, and most machines never block it.
+   */
+  if (ctx.url.searchParams.get('format') === 'ps1') {
+    const safeName = s.org.name.replace(/[^A-Za-z0-9]+/g, '-').slice(0, 24);
+    return {
+      _raw: {
+        body: personalise(readTemplate(), cloud, code, s.org.name),
+        contentType: 'text/plain; charset=utf-8',
+        headers: {
+          'Content-Disposition': `attachment; filename="Munim-Connector-${safeName}.ps1"`,
+        },
+      },
+    };
+  }
+
+  /*
    * What the customer downloads is a .bat, not the PowerShell script.
    *
    * A shop owner double-clicks files. They do not right-click and choose "Run
