@@ -59,7 +59,7 @@ export default function AdminConnectors() {
                       <td className="py-2.5">{c.machine}</td>
                       <td className="py-2.5 text-muted">
                         {c.tallyVersion === 'erp9' ? 'ERP 9' : 'Prime'}
-                        {c.tallyUp === false ? <span className="ml-1 text-amber-700">(down)</span> : null}
+                        {c.tallyUp === false ? <span className="ml-1 text-warn">(down)</span> : null}
                       </td>
                       <td className="py-2.5 tabular-nums text-muted">v{c.appVersion}</td>
                       <td className="py-2.5 text-muted">{shortDate(c.pairedAt)}</td>

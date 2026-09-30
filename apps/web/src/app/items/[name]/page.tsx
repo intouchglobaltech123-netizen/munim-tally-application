@@ -85,7 +85,7 @@ export default function ItemPage({ params }: { params: Promise<{ name: string }>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line text-left text-xs uppercase
-                               tracking-wide text-slate-400">
+                               tracking-wide text-faint">
                   <th className="pb-2 pr-3 font-semibold">Batch</th>
                   <th className="pb-2 pr-3 font-semibold">Godown</th>
                   <th className="pb-2 pr-3 text-right font-semibold">Qty</th>
@@ -97,14 +97,14 @@ export default function ItemPage({ params }: { params: Promise<{ name: string }>
                   const expiring = b.expiryDate
                     && new Date(b.expiryDate).getTime() - Date.now() < 60 * 86_400_000;
                   return (
-                    <tr key={`${b.name}-${b.godown}`} className="border-b border-slate-50 last:border-0">
-                      <td className="py-2.5 pr-3 font-medium text-slate-800">{b.name}</td>
-                      <td className="py-2.5 pr-3 text-slate-500">{b.godown || '—'}</td>
+                    <tr key={`${b.name}-${b.godown}`} className="border-b border-line-soft last:border-0">
+                      <td className="py-2.5 pr-3 font-medium text-ink">{b.name}</td>
+                      <td className="py-2.5 pr-3 text-muted">{b.godown || '—'}</td>
                       <td className="py-2.5 pr-3 text-right tabular-nums">{b.qty}</td>
                       <td className="py-2.5">
                         {b.expiryDate
                           ? <Badge tone={expiring ? 'bad' : 'ok'}>{date(b.expiryDate)}</Badge>
-                          : <span className="text-slate-400">—</span>}
+                          : <span className="text-faint">—</span>}
                       </td>
                     </tr>
                   );
@@ -143,21 +143,21 @@ export default function ItemPage({ params }: { params: Promise<{ name: string }>
               <table className="w-full text-sm">
                 <tbody>
                   {data.movement.map((m) => (
-                    <tr key={m.id} className="border-b border-slate-50 last:border-0">
+                    <tr key={m.id} className="border-b border-line-soft last:border-0">
                       <td className="py-2 pr-2">
                         {m.direction === 'in'
-                          ? <ArrowDownLeft size={13} className="text-emerald-600" />
-                          : <ArrowUpRight size={13} className="text-rose-600" />}
+                          ? <ArrowDownLeft size={13} className="text-positive" />
+                          : <ArrowUpRight size={13} className="text-negative" />}
                       </td>
                       <td className="py-2 pr-3">
-                        <div className="text-xs font-medium text-slate-800">{m.party || m.type}</div>
-                        <div className="text-[11px] text-slate-400">
+                        <div className="text-xs font-medium text-ink">{m.party || m.type}</div>
+                        <div className="text-[11px] text-faint">
                           {m.no} · {date(m.date)}
                         </div>
                       </td>
                       <td className="py-2 text-right tabular-nums text-xs">
-                        <div className="font-semibold text-slate-800">{m.qty}</div>
-                        <div className="text-[11px] text-slate-400">{money(m.amountPaise)}</div>
+                        <div className="font-semibold text-ink">{m.qty}</div>
+                        <div className="text-[11px] text-faint">{money(m.amountPaise)}</div>
                       </td>
                     </tr>
                   ))}
@@ -173,9 +173,9 @@ export default function ItemPage({ params }: { params: Promise<{ name: string }>
 
 function Row({ k, v, mono }: { k: string; v: string; mono?: boolean }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-slate-50 py-2 last:border-0">
-      <span className="text-sm text-slate-500">{k}</span>
-      <span className={`text-sm ${v ? 'font-semibold text-slate-800' : 'text-slate-300'} ${
+    <div className="flex items-baseline justify-between gap-4 border-b border-line-soft py-2 last:border-0">
+      <span className="text-sm text-muted">{k}</span>
+      <span className={`text-sm ${v ? 'font-semibold text-ink' : 'text-faint'} ${
         mono ? 'font-mono' : ''}`}>
         {v || 'Not set in Tally'}
       </span>
@@ -186,9 +186,9 @@ function Row({ k, v, mono }: { k: string; v: string; mono?: boolean }) {
 function Stat({ label, value, tone }: { label: string; value: string; tone?: 'bad' }) {
   return (
     <Card>
-      <div className="text-xs font-medium text-slate-500">{label}</div>
+      <div className="text-xs font-medium text-muted">{label}</div>
       <div className={`mt-1 text-xl font-bold tabular-nums ${
-        tone === 'bad' ? 'text-rose-700' : 'text-slate-900'}`}>{value}</div>
+        tone === 'bad' ? 'text-negative' : 'text-ink'}`}>{value}</div>
     </Card>
   );
 }

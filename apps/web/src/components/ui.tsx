@@ -321,11 +321,11 @@ export function Settling({ when, children }: {
 export { initialsOf };
 
 const AVATAR_TONES = [
-  'bg-emerald-100 text-emerald-800',
+  'bg-positive-soft text-positive',
   'bg-sky-100 text-sky-800',
-  'bg-amber-100 text-amber-800',
+  'bg-warn-soft text-warn',
   'bg-violet-100 text-violet-800',
-  'bg-rose-100 text-rose-800',
+  'bg-negative-soft text-negative',
   'bg-teal-100 text-teal-800',
   'bg-indigo-100 text-indigo-800',
   'bg-orange-100 text-orange-800',

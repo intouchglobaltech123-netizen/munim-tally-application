@@ -80,7 +80,7 @@ export default function InvoicePage({ params }: { params: Promise<{ id: string }
         </div>
       </div>
 
-      <div className="rounded-lg border border-line bg-white shadow-sm">
+      <div className="rounded-lg border border-line bg-paper shadow-sm">
         <Invoice doc={doc} money={money} />
       </div>
     </>
@@ -95,7 +95,7 @@ function Action({ icon: Icon, label, onClick, primary }: {
       className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold
                   transition ${primary
         ? 'bg-brand-700 text-white hover:bg-brand-800'
-        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
+        : 'bg-line-soft text-body hover:bg-line'}`}>
       <Icon size={14} /> {label}
     </button>
   );

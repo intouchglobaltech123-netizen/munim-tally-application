@@ -127,7 +127,7 @@ export default function RemindersPage() {
                             : 'text-muted hover:bg-line-soft hover:text-ink'}`}>
             {t.label}
             {t.key === 'today' && work.data && work.data.totals.parties > 0 && (
-              <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 text-[10px] text-white">
+              <span className="ml-1.5 rounded-full bg-warn px-1.5 text-[10px] text-white">
                 {work.data.totals.parties}
               </span>
             )}
@@ -149,10 +149,10 @@ export default function RemindersPage() {
               </p>
 
               {work.data.totals.unreachable > 0 && (
-                <div className="mb-4 flex items-start gap-2.5 rounded-lg bg-amber-50 px-4 py-3
-                                text-sm ring-1 ring-amber-200">
-                  <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
-                  <span className="text-amber-900">
+                <div className="mb-4 flex items-start gap-2.5 rounded-lg bg-warn-soft px-4 py-3
+                                text-sm ring-1 ring-warn/30">
+                  <AlertTriangle size={16} className="mt-0.5 shrink-0 text-warn" />
+                  <span className="text-warn">
                     <b>{work.data.totals.unreachable}</b> of these have no phone number in Tally.
                     You cannot WhatsApp them until somebody adds one.
                   </span>
@@ -167,7 +167,7 @@ export default function RemindersPage() {
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-semibold text-slate-900">{job.party}</span>
+                          <span className="font-semibold text-ink">{job.party}</span>
                           <Badge tone={job.daysOverdue > 30 ? 'bad' : job.daysOverdue > 0 ? 'warn' : 'ok'}>
                             {job.daysOverdue > 0 ? `${job.daysOverdue} days overdue` : 'due soon'}
                           </Badge>
@@ -176,22 +176,22 @@ export default function RemindersPage() {
                           )}
                           {done[job.party] && <Badge tone="ok">{done[job.party]}</Badge>}
                         </div>
-                        <div className="mt-1 text-xs text-slate-500">
+                        <div className="mt-1 text-xs text-muted">
                           {job.bills.length} bill{job.bills.length === 1 ? '' : 's'} ·{' '}
                           {job.rule.name}
                           {job.phone ? ` · ${job.phone}` : ' · no phone on file'}
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-bold tabular-nums text-slate-900">
+                        <div className="text-lg font-bold tabular-nums text-ink">
                           {money(job.amountPaise)}
                         </div>
                       </div>
                     </div>
 
                     <button onClick={() => setOpen(open === job.party ? null : job.party)}
-                      className="mt-3 w-full rounded-lg bg-slate-50 p-3 text-left text-xs
-                                 leading-relaxed text-slate-700 hover:bg-slate-100">
+                      className="mt-3 w-full rounded-lg bg-canvas p-3 text-left text-xs
+                                 leading-relaxed text-body hover:bg-line-soft">
                       {open === job.party
                         ? job.message.split('\n').map((l, i) => <div key={i}>{l || ' '}</div>)
                         : <span className="line-clamp-2">{job.message}</span>}
@@ -251,8 +251,8 @@ export default function RemindersPage() {
                   <Stat label="Settled after" value={String(hist.data.last90Days.settledAfterReminder)}
                     sub="parties" />
                 </div>
-                <p className="mb-4 flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2
-                              text-xs text-slate-500">
+                <p className="mb-4 flex items-start gap-2 rounded-lg bg-canvas px-3 py-2
+                              text-xs text-muted">
                   <Info size={13} className="mt-0.5 shrink-0" />
                   {hist.data.last90Days.caveat}
                 </p>
@@ -268,10 +268,10 @@ export default function RemindersPage() {
                 <table className="w-full text-sm">
                   <tbody>
                     {hist.data.reminders.filter((r) => matches(r, histSpecs, hf)).map((r) => (
-                      <tr key={r.id} className="border-b border-slate-50 last:border-0">
+                      <tr key={r.id} className="border-b border-line-soft last:border-0">
                         <td className="py-2 pr-3">
-                          <div className="font-medium text-slate-800">{r.party}</div>
-                          <div className="text-[11px] text-slate-400">
+                          <div className="font-medium text-ink">{r.party}</div>
+                          <div className="text-[11px] text-faint">
                             {ago(r.at)}{r.by ? ` · ${r.by}` : ''}
                             {r.billRefs.length ? ` · ${r.billRefs.slice(0, 3).join(', ')}` : ''}
                           </div>
@@ -306,12 +306,12 @@ export default function RemindersPage() {
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-900">{r.name}</span>
+                        <span className="font-semibold text-ink">{r.name}</span>
                         <Badge tone={r.enabled ? 'ok' : 'warn'}>
                           {r.enabled ? 'On' : 'Off'}
                         </Badge>
                       </div>
-                      <div className="mt-0.5 text-xs text-slate-500">
+                      <div className="mt-0.5 text-xs text-muted">
                         {r.trigger === 'before' ? `${r.days} days before due`
                           : r.trigger === 'on' ? 'On the due date'
                           : `${r.days} days after due`}
@@ -359,7 +359,7 @@ function TemplateCard({ t, placeholders, onSaved }: {
   return (
     <Card>
       <div className="mb-2 flex items-center justify-between gap-3">
-        <span className="font-semibold text-slate-900">{t.name}</span>
+        <span className="font-semibold text-ink">{t.name}</span>
         {dirty && (
           <Button disabled={busy}
             onClick={async () => {
@@ -380,8 +380,8 @@ function TemplateCard({ t, placeholders, onSaved }: {
         {placeholders.map((p) => (
           <button key={p.key} title={p.what}
             onClick={() => setBody((b) => `${b}{{${p.key}}}`)}
-            className="rounded bg-slate-100 px-2 py-0.5 font-mono text-[11px] text-slate-600
-                       hover:bg-slate-200">
+            className="rounded bg-line-soft px-2 py-0.5 font-mono text-[11px] text-body
+                       hover:bg-line">
             {`{{${p.key}}}`}
           </button>
         ))}
@@ -393,9 +393,9 @@ function TemplateCard({ t, placeholders, onSaved }: {
 function Stat({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
     <Card>
-      <div className="text-xs font-medium text-slate-500">{label}</div>
-      <div className="mt-1 text-xl font-bold tabular-nums text-slate-900">{value}</div>
-      {sub && <div className="text-[11px] text-slate-400">{sub}</div>}
+      <div className="text-xs font-medium text-muted">{label}</div>
+      <div className="mt-1 text-xl font-bold tabular-nums text-ink">{value}</div>
+      {sub && <div className="text-[11px] text-faint">{sub}</div>}
     </Card>
   );
 }

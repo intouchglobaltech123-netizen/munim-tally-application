@@ -135,7 +135,7 @@ export default function AdminMetricsPage() {
         <CountTile label="E-Way Bills" value={n(f.compliance.eWayBills)} />
       </div>
 
-      <p className="flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+      <p className="flex items-start gap-2 rounded-lg bg-canvas px-3 py-2 text-xs text-muted">
         <AlertTriangle size={13} className="mt-0.5 shrink-0" />
         {f.compliance.note} API and machine figures are held in memory and reset when
         the server restarts; everything else comes from the database.
@@ -152,8 +152,8 @@ function Figure({ label, value, sub, tone = 'ok' }: {
 }) {
   return (
     <Card>
-      <div className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</div>
-      <div className={`mt-1 text-2xl font-bold ${tone === 'bad' ? 'text-rose-600' : 'text-ink'}`}>
+      <div className="text-xs font-medium uppercase tracking-wide text-faint">{label}</div>
+      <div className={`mt-1 text-2xl font-bold ${tone === 'bad' ? 'text-negative' : 'text-ink'}`}>
         {value}
       </div>
       {sub && <div className="mt-0.5 text-xs text-muted">{sub}</div>}
@@ -171,7 +171,7 @@ function RouteTable({ rows, sortLabel }: {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-line text-left text-xs uppercase
-                         tracking-wide text-slate-400">
+                         tracking-wide text-faint">
             <th className="pb-2 pr-3 font-semibold">Route</th>
             <th className="pb-2 pr-3 text-right font-semibold">Calls</th>
             <th className="pb-2 pr-3 text-right font-semibold">Avg</th>
@@ -180,11 +180,11 @@ function RouteTable({ rows, sortLabel }: {
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.route} className="border-b border-slate-50 last:border-0">
-              <td className="py-2 pr-3 font-mono text-[11px] text-slate-700">{r.route}</td>
+            <tr key={r.route} className="border-b border-line-soft last:border-0">
+              <td className="py-2 pr-3 font-mono text-[11px] text-body">{r.route}</td>
               <td className="py-2 pr-3 text-right text-muted">{r.calls}</td>
               <td className="py-2 pr-3 text-right text-ink">{r.avgMs}ms</td>
-              <td className={`py-2 text-right ${r.maxMs > 2000 ? 'text-rose-600' : 'text-muted'}`}>
+              <td className={`py-2 text-right ${r.maxMs > 2000 ? 'text-negative' : 'text-muted'}`}>
                 {r.maxMs}ms
               </td>
             </tr>

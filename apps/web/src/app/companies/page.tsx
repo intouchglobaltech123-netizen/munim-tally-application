@@ -34,11 +34,11 @@ const SORTS = [
 type SortKey = (typeof SORTS)[number]['key'];
 
 const TONE: Record<string, { badge: 'ok' | 'warn' | 'bad'; dot: string }> = {
-  live: { badge: 'ok', dot: 'bg-emerald-500' },
-  quiet: { badge: 'ok', dot: 'bg-emerald-400' },
-  stale: { badge: 'bad', dot: 'bg-rose-500' },
-  never: { badge: 'warn', dot: 'bg-amber-500' },
-  paused: { badge: 'warn', dot: 'bg-slate-400' },
+  live: { badge: 'ok', dot: 'bg-positive' },
+  quiet: { badge: 'ok', dot: 'bg-positive' },
+  stale: { badge: 'bad', dot: 'bg-negative' },
+  never: { badge: 'warn', dot: 'bg-warn' },
+  paused: { badge: 'warn', dot: 'bg-faint' },
 };
 
 export default function CompaniesPage() {
@@ -115,19 +115,19 @@ export default function CompaniesPage() {
       {all.length > 3 && (
         <div className="mb-5 flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[220px]">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
             <input value={q} onChange={(e) => setQ(e.target.value)}
               placeholder="Search by name, GSTIN or state"
               className="w-full rounded-lg border border-line py-2 pl-9 pr-3 text-sm
                          outline-none focus:border-brand-500" />
           </div>
           <div className="flex items-center gap-1.5">
-            <ArrowUpDown size={14} className="text-slate-400" />
+            <ArrowUpDown size={14} className="text-faint" />
             {SORTS.map((sOpt) => (
               <button key={sOpt.key} onClick={() => setSort(sOpt.key)}
                 className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
-                  sort === sOpt.key ? 'bg-slate-800 text-white'
-                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                  sort === sOpt.key ? 'bg-ink text-white'
+                                    : 'bg-line-soft text-body hover:bg-line'}`}>
                 {sOpt.label}
               </button>
             ))}
@@ -174,17 +174,17 @@ function CompanyBlock({
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className={`h-2 w-2 shrink-0 rounded-full ${tone.dot}`} />
-            <h3 className="truncate text-base font-bold text-slate-900">{p.name}</h3>
+            <h3 className="truncate text-base font-bold text-ink">{p.name}</h3>
             {current && <Badge tone="ok">Open</Badge>}
           </div>
           {p.formalName !== p.name && (
-            <div className="mt-0.5 truncate text-xs text-slate-500">{p.formalName}</div>
+            <div className="mt-0.5 truncate text-xs text-muted">{p.formalName}</div>
           )}
         </div>
         <Badge tone={tone.badge}>{c.health.label}</Badge>
       </div>
 
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-xs text-muted">
         {c.health.hint}
         {c.lastSyncAt && ` Last sync ${ago(c.lastSyncAt)}.`}
       </p>
@@ -192,7 +192,7 @@ function CompanyBlock({
       {/* Identity, only what Tally actually has. Empty rows are omitted rather
           than shown blank - a row reading "GSTIN —" looks like a fault. */}
       {(p.address || p.gstin || p.phone || p.email) && (
-        <div className="mt-4 space-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-600">
+        <div className="mt-4 space-y-1.5 border-t border-line-soft pt-3 text-xs text-body">
           {p.address && <Field icon={MapPin}>{[p.address, p.state, p.pincode].filter(Boolean).join(', ')}</Field>}
           {p.gstin && <Field icon={Hash}><span className="font-mono">{p.gstin}</span></Field>}
           {p.phone && <Field icon={Phone}>{p.phone}</Field>}
@@ -200,7 +200,7 @@ function CompanyBlock({
         </div>
       )}
 
-      <div className="mt-4 grid grid-cols-4 gap-2 border-t border-slate-100 pt-3">
+      <div className="mt-4 grid grid-cols-4 gap-2 border-t border-line-soft pt-3">
         <Count icon={Receipt} n={c.counts.vouchers} label="vouchers" />
         <Count icon={Users} n={c.counts.customers} label="customers" />
         <Count icon={FileText} n={c.counts.ledgers} label="ledgers" />
@@ -208,19 +208,19 @@ function CompanyBlock({
       </div>
 
       {c.completeness.missing.length > 0 && (
-        <div className="mt-4 rounded-lg bg-amber-50 p-3 ring-1 ring-amber-200">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-800">
+        <div className="mt-4 rounded-lg bg-warn-soft p-3 ring-1 ring-warn/30">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-warn">
             <AlertCircle size={13} />
             Missing from Tally: {c.completeness.missing.map((m) => m.label).join(', ')}
           </div>
-          <p className="mt-1 text-xs leading-relaxed text-amber-700">
+          <p className="mt-1 text-xs leading-relaxed text-warn">
             {c.completeness.missing[0].why} {c.completeness.fixHint}
           </p>
         </div>
       )}
 
       {p.fyStart && (
-        <p className="mt-3 text-xs text-slate-400">
+        <p className="mt-3 text-xs text-faint">
           Financial year from {shortDate(p.fyStart)}
           {p.fyEnd ? ` to ${shortDate(p.fyEnd)}` : ''}
           {p.booksFrom && p.booksFrom !== p.fyStart ? ` · books from ${shortDate(p.booksFrom)}` : ''}
@@ -254,7 +254,7 @@ function Field({ icon: Icon, children }: {
 }) {
   return (
     <div className="flex items-start gap-2">
-      <Icon size={13} className="mt-0.5 shrink-0 text-slate-400" />
+      <Icon size={13} className="mt-0.5 shrink-0 text-faint" />
       <span className="min-w-0 break-words">{children}</span>
     </div>
   );
@@ -263,11 +263,11 @@ function Field({ icon: Icon, children }: {
 function Count({ icon: Icon, n, label }: { icon: typeof Users; n: number; label: string }) {
   return (
     <div className="text-center">
-      <Icon size={13} className="mx-auto text-slate-400" />
-      <div className="mt-1 text-sm font-bold tabular-nums text-slate-800">
+      <Icon size={13} className="mx-auto text-faint" />
+      <div className="mt-1 text-sm font-bold tabular-nums text-ink">
         {n.toLocaleString('en-IN')}
       </div>
-      <div className="text-[10px] uppercase tracking-wide text-slate-400">{label}</div>
+      <div className="text-[10px] uppercase tracking-wide text-faint">{label}</div>
     </div>
   );
 }
@@ -284,10 +284,10 @@ function Count({ icon: Icon, n, label }: { icon: typeof Users; n: number; label:
 function ConnectionBar({ c }: { c: CompanySummary['connection'] }) {
   const good = c.online && c.tallyUp && c.queuedBatches === 0;
   const tone = good
-    ? 'bg-emerald-50 text-emerald-800 ring-emerald-200'
+    ? 'bg-positive-soft text-positive ring-positive/30'
     : c.online
-      ? 'bg-amber-50 text-amber-800 ring-amber-200'
-      : 'bg-rose-50 text-rose-800 ring-rose-200';
+      ? 'bg-warn-soft text-warn ring-warn/30'
+      : 'bg-negative-soft text-negative ring-negative/30';
 
   return (
     <div className={`mb-5 flex items-start gap-2.5 rounded-lg px-3.5 py-2.5 text-sm ring-1 ${tone}`}>

@@ -140,8 +140,8 @@ export default function EntryPage() {
         )} />
 
       {!o.writesEnabled && (
-        <Card className="mb-6 border-amber-200 bg-amber-50">
-          <div className="flex items-start gap-2 text-sm text-amber-900">
+        <Card className="mb-6 border-warn/40 bg-warn-soft">
+          <div className="flex items-start gap-2 text-sm text-warn">
             <Lock size={15} className="mt-0.5 shrink-0" />
             <span>
               Writing to Tally is switched off for this business, so you can draft
@@ -153,14 +153,14 @@ export default function EntryPage() {
       )}
 
       {said && (
-        <div className="mb-4 flex items-start gap-2 rounded-lg bg-emerald-50 px-3 py-2
-                        text-sm text-emerald-800">
+        <div className="mb-4 flex items-start gap-2 rounded-lg bg-positive-soft px-3 py-2
+                        text-sm text-positive">
           <CheckCircle2 size={15} className="mt-0.5 shrink-0" /> {said}
         </div>
       )}
       {err && (
-        <div className="mb-4 flex items-start gap-2 rounded-lg bg-rose-50 px-3 py-2
-                        text-sm text-rose-800">
+        <div className="mb-4 flex items-start gap-2 rounded-lg bg-negative-soft px-3 py-2
+                        text-sm text-negative">
           <AlertTriangle size={15} className="mt-0.5 shrink-0" /> {err}
         </div>
       )}
@@ -172,7 +172,7 @@ export default function EntryPage() {
               className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
                 kind === k.key
                   ? 'border-brand-600 bg-brand-600 text-white'
-                  : 'border-line text-muted hover:border-slate-300'}`}>
+                  : 'border-line text-muted hover:border-line'}`}>
               {k.label}
             </button>
           ))}
@@ -246,7 +246,7 @@ export default function EntryPage() {
 
               <button onClick={() => setLines(lines.filter((_, j) => j !== i))}
                 disabled={lines.length <= 2}
-                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100
+                className="rounded-lg p-2 text-faint hover:bg-line-soft
                            disabled:opacity-25">
                 <X size={15} />
               </button>
@@ -267,8 +267,8 @@ export default function EntryPage() {
             */}
           <div className={`rounded-lg px-3 py-1.5 text-sm font-semibold tabular-nums ${
             difference === 0 && debit > 0
-              ? 'bg-emerald-50 text-emerald-800'
-              : 'bg-amber-50 text-amber-800'}`}>
+              ? 'bg-positive-soft text-positive'
+              : 'bg-warn-soft text-warn'}`}>
             {debit === 0 && credit === 0
               ? 'Nothing entered yet'
               : difference === 0
@@ -285,12 +285,12 @@ export default function EntryPage() {
         </label>
 
         {problems.length > 0 && (
-          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
+          <div className="mt-4 rounded-lg border border-warn/40 bg-warn-soft p-3">
             <div className="mb-1 flex items-center gap-1.5 text-sm font-semibold
-                            text-amber-900">
+                            text-warn">
               <AlertTriangle size={14} /> Fix these before sending
             </div>
-            <ul className="space-y-0.5 text-sm text-amber-800">
+            <ul className="space-y-0.5 text-sm text-warn">
               {problems.map((p) => <li key={p}>• {p}</li>)}
             </ul>
           </div>
@@ -320,7 +320,7 @@ export default function EntryPage() {
           <p className="text-sm text-muted">Nothing yet.</p>
         ) : list.data.drafts.map((d) => (
           <div key={d.id} className="flex flex-wrap items-center gap-3 border-b
-                                     border-slate-50 py-2.5 last:border-0">
+                                     border-line-soft py-2.5 last:border-0">
             <div className="min-w-[180px] flex-1">
               <div className="text-sm font-medium text-ink">
                 {d.kindLabel}{d.party ? ` — ${d.party}` : ''}
@@ -331,7 +331,7 @@ export default function EntryPage() {
                 {d.createdBy ? ` · ${d.createdBy}` : ''}
               </div>
               {d.error && (
-                <div className="mt-0.5 text-xs text-rose-600">{d.error}</div>
+                <div className="mt-0.5 text-xs text-negative">{d.error}</div>
               )}
             </div>
 
@@ -348,7 +348,7 @@ export default function EntryPage() {
             {['draft', 'queued', 'rejected'].includes(d.status) && (
               <button
                 onClick={() => post(`/v1/entries/${d.id}/cancel`, {}).then(() => list.reload())}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"
+                className="rounded-lg p-1.5 text-faint hover:bg-line-soft"
                 title="Withdraw">
                 <Trash2 size={14} />
               </button>
@@ -357,8 +357,8 @@ export default function EntryPage() {
         ))}
       </Card>
 
-      <p className="mt-5 flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2
-                    text-xs text-slate-500">
+      <p className="mt-5 flex items-start gap-2 rounded-lg bg-canvas px-3 py-2
+                    text-xs text-muted">
         <Info size={13} className="mt-0.5 shrink-0" /> {o.note}
       </p>
     </>

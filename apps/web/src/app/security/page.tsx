@@ -51,15 +51,15 @@ export default function SecurityPage() {
       <PageTitle title="Security" subtitle="Who can get at your books, and who has tried." />
 
       {hist.data && hist.data.failedLast30Days > 0 && (
-        <div className="mb-6 flex items-start gap-2.5 rounded-lg bg-amber-50 px-4 py-3
-                        text-sm ring-1 ring-amber-200">
-          <AlertTriangle size={17} className="mt-0.5 shrink-0 text-amber-600" />
+        <div className="mb-6 flex items-start gap-2.5 rounded-lg bg-warn-soft px-4 py-3
+                        text-sm ring-1 ring-warn/30">
+          <AlertTriangle size={17} className="mt-0.5 shrink-0 text-warn" />
           <div>
-            <span className="font-semibold text-amber-900">
+            <span className="font-semibold text-warn">
               {hist.data.failedLast30Days} failed sign-in
               {hist.data.failedLast30Days === 1 ? '' : 's'} in the last 30 days
             </span>
-            <p className="mt-0.5 text-xs text-amber-800">
+            <p className="mt-0.5 text-xs text-warn">
               If none of these were you, sign out every device below. Your Google
               account password may need changing too.
             </p>
@@ -89,7 +89,7 @@ export default function SecurityPage() {
         <div>
           <SectionTitle icon={Lock}>App lock</SectionTitle>
           <Card>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-body">
               Google protects your account. It cannot protect a phone that is
               already signed in and lying on the counter. A PIN puts something
               in front of your figures.
@@ -98,7 +98,7 @@ export default function SecurityPage() {
             {s?.appLock.enabled ? (
               <div className="mt-4">
                 <Badge tone="ok">On</Badge>
-                <span className="ml-2 text-sm text-slate-600">
+                <span className="ml-2 text-sm text-body">
                   {s.appLock.minutes === 0
                     ? 'Asks every time the app opens.'
                     : `Asks after ${s.appLock.minutes} minutes idle.`}
@@ -113,20 +113,20 @@ export default function SecurityPage() {
             ) : (
               <div className="mt-4 space-y-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-600">PIN (4–8 digits)</label>
+                  <label className="text-xs font-semibold text-body">PIN (4–8 digits)</label>
                   <input value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
                     inputMode="numeric" maxLength={8} type="password"
                     className="mt-1 block w-40 rounded-lg border border-line px-3 py-2
                                font-mono text-sm tracking-widest outline-none focus:border-brand-500" />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-600">Ask again after</label>
+                  <label className="text-xs font-semibold text-body">Ask again after</label>
                   <div className="mt-1 flex gap-1.5">
                     {[0, 5, 30, 120].map((m) => (
                       <button key={m} onClick={() => setMinutes(m)}
                         className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
                           minutes === m ? 'bg-brand-700 text-white'
-                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                                        : 'bg-line-soft text-body hover:bg-line'}`}>
                         {m === 0 ? 'Every time' : `${m} min`}
                       </button>
                     ))}
@@ -139,8 +139,8 @@ export default function SecurityPage() {
               </div>
             )}
 
-            {err && <p className="mt-3 text-sm text-rose-600">{err}</p>}
-            {said && <p className="mt-3 text-sm text-emerald-600">{said}</p>}
+            {err && <p className="mt-3 text-sm text-negative">{err}</p>}
+            {said && <p className="mt-3 text-sm text-positive">{said}</p>}
           </Card>
         </div>
       </div>
@@ -156,7 +156,7 @@ export default function SecurityPage() {
               <table className="w-full min-w-[560px] text-sm">
                 <thead>
                   <tr className="border-b border-line text-left text-xs uppercase
-                                 tracking-wide text-slate-400">
+                                 tracking-wide text-faint">
                     <th className="pb-2 pr-3 font-semibold">When</th>
                     <th className="pb-2 pr-3 font-semibold">Device</th>
                     <th className="pb-2 pr-3 font-semibold">Network</th>
@@ -165,32 +165,32 @@ export default function SecurityPage() {
                 </thead>
                 <tbody>
                   {hist.data.events.map((e, i) => (
-                    <tr key={i} className="border-b border-slate-50 last:border-0">
-                      <td className="whitespace-nowrap py-2.5 pr-3 text-slate-600">{ago(e.at)}</td>
+                    <tr key={i} className="border-b border-line-soft last:border-0">
+                      <td className="whitespace-nowrap py-2.5 pr-3 text-body">{ago(e.at)}</td>
                       <td className="py-2.5 pr-3">
-                        <span className="inline-flex items-center gap-1.5 text-slate-700">
+                        <span className="inline-flex items-center gap-1.5 text-body">
                           {e.deviceKind === 'mobile'
-                            ? <Smartphone size={13} className="text-slate-400" />
-                            : <Monitor size={13} className="text-slate-400" />}
+                            ? <Smartphone size={13} className="text-faint" />
+                            : <Monitor size={13} className="text-faint" />}
                           {e.deviceLabel || e.deviceKind || 'Unknown'}
                         </span>
                       </td>
                       {/* Only a /24 is kept — enough to spot "not my usual line". */}
-                      <td className="py-2.5 pr-3 font-mono text-xs text-slate-500">
+                      <td className="py-2.5 pr-3 font-mono text-xs text-muted">
                         {e.ipPrefix || '—'}
                       </td>
                       <td className="py-2.5">
                         {e.ok ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-positive">
                             <CheckCircle2 size={13} /> Signed in
                           </span>
                         ) : (
                           <div>
-                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-rose-600">
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-negative">
                               <XCircle size={13} /> Failed
                             </span>
                             {e.reason && (
-                              <div className="mt-0.5 text-[11px] text-slate-500">{e.reason}</div>
+                              <div className="mt-0.5 text-[11px] text-muted">{e.reason}</div>
                             )}
                           </div>
                         )}
@@ -208,9 +208,9 @@ export default function SecurityPage() {
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-baseline justify-between border-b border-slate-50 py-2 last:border-0">
-      <span className="text-sm text-slate-500">{label}</span>
-      <span className="text-sm font-semibold text-slate-800">{value}</span>
+    <div className="flex items-baseline justify-between border-b border-line-soft py-2 last:border-0">
+      <span className="text-sm text-muted">{label}</span>
+      <span className="text-sm font-semibold text-ink">{value}</span>
     </div>
   );
 }

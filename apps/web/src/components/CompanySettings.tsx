@@ -85,7 +85,7 @@ export default function CompanySettings({ c, onChanged, onRemoved }: {
       </SectionTitle>
 
       {err && (
-        <div className="mb-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700 ring-1 ring-rose-200">
+        <div className="mb-4 rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative ring-1 ring-negative/30">
           {err}
         </div>
       )}
@@ -97,11 +97,11 @@ export default function CompanySettings({ c, onChanged, onRemoved }: {
           {s.logoDataUri
             /* eslint-disable-next-line @next/next/no-img-element */
             ? <img src={s.logoDataUri} alt="Company logo" className="h-full w-full object-contain" />
-            : <ImageIcon size={20} className="text-slate-300" />}
+            : <ImageIcon size={20} className="text-faint" />}
         </div>
         <div className="min-w-0">
-          <div className="text-sm font-semibold text-slate-800">Logo</div>
-          <p className="text-xs text-slate-500">
+          <div className="text-sm font-semibold text-ink">Logo</div>
+          <p className="text-xs text-muted">
             Printed at the top of invoices and statements. PNG, JPG or WebP, under 380 KB.
           </p>
           <div className="mt-2 flex gap-2">
@@ -125,7 +125,7 @@ export default function CompanySettings({ c, onChanged, onRemoved }: {
       </div>
 
       {/* Number format */}
-      <div className="mt-6 border-t border-slate-100 pt-5">
+      <div className="mt-6 border-t border-line-soft pt-5">
         <Choice
           icon={Hash}
           label="Number format"
@@ -174,17 +174,17 @@ export default function CompanySettings({ c, onChanged, onRemoved }: {
       </div>
 
       {saved && (
-        <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
+        <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-positive">
           <Check size={13} /> Saved
         </div>
       )}
 
       {/* Removal, last and visibly separated. */}
-      <div className="mt-8 rounded-lg bg-rose-50 p-4 ring-1 ring-rose-200">
-        <div className="flex items-center gap-2 text-sm font-semibold text-rose-800">
+      <div className="mt-8 rounded-lg bg-negative-soft p-4 ring-1 ring-negative/30">
+        <div className="flex items-center gap-2 text-sm font-semibold text-negative">
           <AlertTriangle size={15} /> Remove this book from Munim
         </div>
-        <p className="mt-1.5 text-xs leading-relaxed text-rose-700">
+        <p className="mt-1.5 text-xs leading-relaxed text-negative">
           Deletes Munim&apos;s copy of <b>{c.profile.name}</b> — {c.counts.vouchers.toLocaleString('en-IN')} vouchers
           and {c.counts.ledgers.toLocaleString('en-IN')} ledgers. <b>Your Tally company is not touched.</b>{' '}
           The connector will download it again on its next sync, so pause sync instead if you
@@ -201,13 +201,13 @@ export default function CompanySettings({ c, onChanged, onRemoved }: {
           <div className="mt-3">
             {/* Typing the name, not an "are you sure" - the second is clicked
                 through on reflex, and this is the one destructive button here. */}
-            <label className="text-xs font-medium text-rose-800">
+            <label className="text-xs font-medium text-negative">
               Type <b>{c.profile.name}</b> to confirm:
             </label>
             <div className="mt-1.5 flex gap-2">
               <input value={confirmText} onChange={(e) => setConfirmText(e.target.value)}
-                className="min-w-0 flex-1 rounded-lg border border-rose-300 px-3 py-2 text-sm
-                           outline-none focus:border-rose-500" />
+                className="min-w-0 flex-1 rounded-lg border border-negative/30 px-3 py-2 text-sm
+                           outline-none focus:border-negative" />
               <Button variant="danger" icon={Trash2}
                 disabled={busy || confirmText !== c.profile.name}
                 onClick={remove}>
@@ -235,10 +235,10 @@ function Choice({ icon: Icon, label, hint, value, options, onPick, disabled }: {
 }) {
   return (
     <div>
-      <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-800">
-        <Icon size={14} className="text-slate-400" /> {label}
+      <div className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+        <Icon size={14} className="text-faint" /> {label}
       </div>
-      {hint && <p className="mt-0.5 text-xs text-slate-500">{hint}</p>}
+      {hint && <p className="mt-0.5 text-xs text-muted">{hint}</p>}
       <div className="mt-2 flex flex-wrap gap-2">
         {options.map((o) => (
           /* The sample is the control. Nobody knows what "Indian grouping"
@@ -247,9 +247,9 @@ function Choice({ icon: Icon, label, hint, value, options, onPick, disabled }: {
             className={`rounded-lg border px-3 py-2 text-left transition disabled:opacity-50 ${
               value === o.value
                 ? 'border-brand-500 bg-brand-50 ring-1 ring-brand-500'
-                : 'border-line hover:border-slate-300'}`}>
-            <div className="text-xs font-semibold text-slate-700">{o.label}</div>
-            <div className="mt-0.5 font-mono text-xs tabular-nums text-slate-500">{o.sample}</div>
+                : 'border-line hover:border-line'}`}>
+            <div className="text-xs font-semibold text-body">{o.label}</div>
+            <div className="mt-0.5 font-mono text-xs tabular-nums text-muted">{o.sample}</div>
           </button>
         ))}
       </div>

@@ -84,7 +84,7 @@ export default function OutstandingPage() {
           {(['receivable', 'payable'] as const).map((k) => (
             <button key={k} onClick={() => { setKind(k); setBucket(null); }}
               className={`px-4 py-2 text-sm font-semibold ${
-                kind === k ? 'bg-brand-700 text-white' : 'bg-white text-body hover:bg-canvas'}`}>
+                kind === k ? 'bg-brand-700 text-white' : 'bg-surface text-body hover:bg-canvas'}`}>
               {k === 'receivable' ? 'Receivable' : 'Payable'}
             </button>
           ))}
@@ -97,11 +97,11 @@ export default function OutstandingPage() {
           return (
             <button key={b} onClick={() => setBucket(active ? null : b)}
               className={`rounded-xl border p-4 text-left transition ${
-                active ? 'border-brand-600 bg-brand-50' : 'border-line bg-white hover:border-line'}`}>
+                active ? 'border-brand-600 bg-brand-50' : 'border-line bg-surface hover:border-faint'}`}>
               <div className="text-xs font-semibold uppercase tracking-wider text-muted">
                 {b === '90+' ? '90+ days' : `${b} days`}
               </div>
-              <div className={`mt-1 text-xl font-bold tabular-nums ${b === '90+' ? 'text-rose-700' : ''}`}>
+              <div className={`mt-1 text-xl font-bold tabular-nums ${b === '90+' ? 'text-negative' : ''}`}>
                 {inr(data.totals.buckets[b] ?? 0, { compact: true })}
               </div>
             </button>
@@ -152,7 +152,7 @@ export default function OutstandingPage() {
                     <div className="text-right">
                       <div className="font-bold tabular-nums">{inr(p.totalPaise)}</div>
                       {p.overduePaise > 0 ? (
-                        <div className="text-xs tabular-nums text-rose-700">
+                        <div className="text-xs tabular-nums text-negative">
                           {inr(p.overduePaise)} overdue
                         </div>
                       ) : null}
@@ -179,7 +179,7 @@ export default function OutstandingPage() {
                               <td className="py-2">{b.ref}</td>
                               <td className="whitespace-nowrap py-2">{shortDate(b.date)}</td>
                               <td className="whitespace-nowrap py-2">{shortDate(b.dueDate)}</td>
-                              <td className={`py-2 tabular-nums ${b.days > 90 ? 'font-semibold text-rose-700' : ''}`}>
+                              <td className={`py-2 tabular-nums ${b.days > 90 ? 'font-semibold text-negative' : ''}`}>
                                 {b.days > 0 ? `${b.days}d late` : 'not due'}
                               </td>
                               <td className="py-2 text-right font-semibold tabular-nums">
@@ -204,7 +204,7 @@ export default function OutstandingPage() {
                         <a href={`tel:${p.phone}`}><Button variant="ghost">Call</Button></a>
                       ) : null}
                       {state && state !== 'sent' && state !== 'sending' ? (
-                        <span className="text-sm text-rose-700">{state}</span>
+                        <span className="text-sm text-negative">{state}</span>
                       ) : null}
                     </div>
                   </div>
@@ -229,7 +229,7 @@ function Figure({ label, value, tone }: { label: string; value: string; tone?: '
   return (
     <div>
       <div className="text-xs font-semibold uppercase tracking-wider text-muted">{label}</div>
-      <div className={`text-lg font-bold tabular-nums ${tone === 'bad' ? 'text-rose-700' : ''}`}>{value}</div>
+      <div className={`text-lg font-bold tabular-nums ${tone === 'bad' ? 'text-negative' : ''}`}>{value}</div>
     </div>
   );
 }

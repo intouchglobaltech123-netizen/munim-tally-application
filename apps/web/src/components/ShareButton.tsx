@@ -74,25 +74,25 @@ export default function ShareButton({ kind, subject, label = 'Share', extra, com
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-auto
-                        bg-slate-900/40 p-4 sm:p-8"
+                        bg-ink/40 p-4 sm:p-8"
           onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
           <Card className="w-full max-w-lg">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="font-bold text-slate-900">Share {kind}</h2>
-                {data && <p className="text-xs text-slate-500">{data.subject}</p>}
+                <h2 className="font-bold text-ink">Share {kind}</h2>
+                {data && <p className="text-xs text-muted">{data.subject}</p>}
               </div>
               <Button variant="ghost" icon={X} onClick={() => setOpen(false)}>Close</Button>
             </div>
 
             {busy && (
-              <div className="flex items-center gap-2 py-8 text-sm text-slate-500">
+              <div className="flex items-center gap-2 py-8 text-sm text-muted">
                 <Loader2 size={15} className="animate-spin" /> Building the message…
               </div>
             )}
 
             {err && (
-              <div className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{err}</div>
+              <div className="mt-3 rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative">{err}</div>
             )}
 
             {data && !busy && (
@@ -104,8 +104,8 @@ export default function ShareButton({ kind, subject, label = 'Share', extra, com
                              leading-relaxed outline-none focus:border-brand-500" />
 
                 {!data.recipient && kind !== 'report' && kind !== 'item' && (
-                  <div className="mt-2 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2
-                                  text-xs text-amber-800">
+                  <div className="mt-2 flex items-start gap-2 rounded-lg bg-warn-soft px-3 py-2
+                                  text-xs text-warn">
                     <AlertTriangle size={13} className="mt-0.5 shrink-0" />
                     No phone number for this party in Tally. WhatsApp will ask you who to send to.
                   </div>
@@ -132,13 +132,13 @@ export default function ShareButton({ kind, subject, label = 'Share', extra, com
                   </Button>
                   {done && (
                     <span className="inline-flex items-center gap-1 text-xs font-semibold
-                                     text-emerald-600">
+                                     text-positive">
                       <Check size={13} /> Recorded
                     </span>
                   )}
                 </div>
 
-                <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
+                <p className="mt-3 text-[11px] leading-relaxed text-faint">
                   Munim does not send this. Your own WhatsApp or mail app does, so it
                   comes from your number.
                 </p>

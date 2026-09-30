@@ -205,15 +205,15 @@ export function RankBars({ data, colour = '#0E7A47', money = axisMoney, max = 8 
       {top.map((d) => (
         <div key={d.label} className="group">
           <div className="flex items-baseline justify-between gap-3 text-xs">
-            <span className="truncate font-medium text-slate-700">{d.label}</span>
-            <span className="shrink-0 tabular-nums font-semibold text-slate-900">
+            <span className="truncate font-medium text-body">{d.label}</span>
+            <span className="shrink-0 tabular-nums font-semibold text-ink">
               {money(d.value)}
-              <span className="ml-1.5 font-normal text-slate-400">
+              <span className="ml-1.5 font-normal text-faint">
                 {total > 0 ? `${Math.round((d.value / total) * 100)}%` : ''}
               </span>
             </span>
           </div>
-          <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-100">
+          <div className="mt-1 h-2 overflow-hidden rounded-full bg-line-soft">
             <div className="h-full rounded-full transition-all duration-500"
               style={{ width: `${(d.value / peak) * 100}%`, background: colour }} />
           </div>
@@ -284,11 +284,11 @@ export function Donut({ data, size = 190, money = axisMoney }: {
           <div key={d.label}
             onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}
             className={`flex items-center gap-2 rounded px-1.5 py-0.5 text-xs transition ${
-              hover === i ? 'bg-slate-100' : ''}`}>
+              hover === i ? 'bg-line-soft' : ''}`}>
             <span className="h-2.5 w-2.5 shrink-0 rounded-sm"
               style={{ background: COLOURS[i % COLOURS.length] }} />
-            <span className="min-w-0 flex-1 truncate text-slate-600">{d.label}</span>
-            <span className="shrink-0 tabular-nums font-semibold text-slate-800">
+            <span className="min-w-0 flex-1 truncate text-body">{d.label}</span>
+            <span className="shrink-0 tabular-nums font-semibold text-ink">
               {money(d.value)}
             </span>
           </div>
@@ -383,7 +383,7 @@ export function Spark({ data, colour = 'var(--color-brand-600)', height = 28 }: 
 
 function NoData({ height }: { height: number }) {
   return (
-    <div className="flex items-center justify-center rounded-lg bg-slate-50 text-xs text-slate-400"
+    <div className="flex items-center justify-center rounded-lg bg-canvas text-xs text-faint"
       style={{ height }}>
       Nothing in this period yet.
     </div>

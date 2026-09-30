@@ -51,7 +51,7 @@ export default function AdminHome() {
           : (
             <div className="mb-8 grid gap-3">
               {unhealthy.map((c) => (
-                <Card key={c.id} className="border-amber-200 bg-amber-50">
+                <Card key={c.id} className="border-warn/40 bg-warn-soft">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="font-semibold">{c.orgName}</p>

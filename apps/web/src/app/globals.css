@@ -43,6 +43,22 @@
   --surface: #ffffff;
   --canvas: var(--n-50);
 
+  /*
+   * The sidebar is a deep panel with white text in both themes, so it cannot
+   * ride on the brand scale - that scale has to LIFT on dark to stay legible
+   * as text, which turned the sidebar pale and its white labels to mush.
+   */
+  --sidebar-from: var(--emerald-800);
+  --sidebar-to: var(--emerald-600);
+
+  /*
+   * Paper. Deliberately NOT themed: an invoice is printed on white, and the
+   * preview is a picture of that. Themed ink on themed paper turned the
+   * invoice into white text on a white sheet in dark mode.
+   */
+  --paper: #ffffff;
+  --paper-ink: #101614;
+
   --background: var(--canvas);
   --foreground: var(--n-900);
 
@@ -68,13 +84,23 @@
  */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --emerald-900: #D8EDE2;
-    --emerald-800: #BFE2D1;
-    --emerald-700: #6ED3A2;
-    --emerald-600: #3FC084;
-    --emerald-500: #2FB877;
-    --emerald-100: #16301F;
-    --emerald-50:  #0F2318;
+    /*
+     * Not a lightness ramp on dark - a set of roles.
+     *
+     * 500 is bright because it is the one used as TEXT and icons on a dark
+     * surface. 600-800 stay deep because they are button backgrounds carrying
+     * white labels, and a bright green under white text is unreadable. 900 is
+     * light because its only job is text on the 50 tint, which is now dark.
+     * Ranking them by lightness instead is what turned buttons into pale
+     * rectangles with invisible writing.
+     */
+    --emerald-900: #D9EEE3;
+    --emerald-800: #0B6440;
+    --emerald-700: #0F7A4E;
+    --emerald-600: #12925C;
+    --emerald-500: #3DC489;
+    --emerald-100: #17331F;
+    --emerald-50:  #10251A;
 
     --gold-700: #E4C56A;
     --gold-500: #D8B44A;
@@ -98,18 +124,22 @@
     --surface: #151D19;
     --canvas: #0B100E;
 
+    --sidebar-from: #0C1A14;
+    --sidebar-to: #10251B;
+
     color-scheme: dark;
   }
 }
 
 :root[data-theme="dark"] {
-  --emerald-900: #D8EDE2;
-  --emerald-800: #BFE2D1;
-  --emerald-700: #6ED3A2;
-  --emerald-600: #3FC084;
-  --emerald-500: #2FB877;
-  --emerald-100: #16301F;
-  --emerald-50:  #0F2318;
+  /* Roles, not a lightness ramp - see the note in the media query above. */
+  --emerald-900: #D9EEE3;
+  --emerald-800: #0B6440;
+  --emerald-700: #0F7A4E;
+  --emerald-600: #12925C;
+  --emerald-500: #3DC489;
+  --emerald-100: #17331F;
+  --emerald-50:  #10251A;
 
   --gold-700: #E4C56A;
   --gold-500: #D8B44A;
@@ -132,6 +162,9 @@
 
   --surface: #151D19;
   --canvas: #0B100E;
+
+  --sidebar-from: #0C1A14;
+  --sidebar-to: #10251B;
 
   color-scheme: dark;
 }
@@ -164,6 +197,12 @@
   --color-negative-soft: var(--negative-soft);
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
+
+  --color-paper: var(--paper);
+  --color-paper-ink: var(--paper-ink);
+
+  --color-sidebar-from: var(--sidebar-from);
+  --color-sidebar-to: var(--sidebar-to);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);

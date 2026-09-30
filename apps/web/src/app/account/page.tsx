@@ -73,30 +73,30 @@ export default function AccountPage() {
         subtitle="Who owns this business in Munim, and how to get back in." />
 
       {said && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2
-                        text-sm text-emerald-800">
+        <div className="mb-4 flex items-center gap-2 rounded-lg bg-positive-soft px-3 py-2
+                        text-sm text-positive">
           <CheckCircle2 size={15} /> {said}
         </div>
       )}
       {err && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg bg-rose-50 px-3 py-2
-                        text-sm text-rose-800">
+        <div className="mb-4 flex items-center gap-2 rounded-lg bg-negative-soft px-3 py-2
+                        text-sm text-negative">
           <AlertTriangle size={15} /> {err}
         </div>
       )}
 
       {/* A pending deletion outranks everything else on the page. */}
       {data.deletion && (
-        <Card className="mb-6 border-rose-200 bg-rose-50">
+        <Card className="mb-6 border-negative/30 bg-negative-soft">
           <div className="flex items-start gap-3">
-            <AlertTriangle size={20} className="mt-0.5 shrink-0 text-rose-600" />
+            <AlertTriangle size={20} className="mt-0.5 shrink-0 text-negative" />
             <div className="flex-1">
-              <div className="font-semibold text-rose-900">
+              <div className="font-semibold text-negative">
                 This account is scheduled for deletion in {data.deletion.daysLeft} day
                 {data.deletion.daysLeft === 1 ? '' : 's'}
               </div>
-              <p className="mt-1 text-sm text-rose-800">{data.deletion.note}</p>
-              <p className="mt-1 text-xs text-rose-700">
+              <p className="mt-1 text-sm text-negative">{data.deletion.note}</p>
+              <p className="mt-1 text-xs text-negative">
                 Asked for by {data.deletion.requestedBy} on{' '}
                 {shortDate(data.deletion.requestedAt)}
                 {data.deletion.reason ? ` — “${data.deletion.reason}”` : ''}
@@ -131,8 +131,8 @@ export default function AccountPage() {
       </Card>
 
       {data.soleOwner && (
-        <Card className="mb-6 border-amber-200 bg-amber-50">
-          <div className="flex items-start gap-2 text-sm text-amber-900">
+        <Card className="mb-6 border-warn/40 bg-warn-soft">
+          <div className="flex items-start gap-2 text-sm text-warn">
             <AlertTriangle size={15} className="mt-0.5 shrink-0" />
             <span>{data.soleOwnerWarning}</span>
           </div>
@@ -165,7 +165,7 @@ export default function AccountPage() {
       <SectionTitle icon={Users2} note="who can close this account">Owners</SectionTitle>
       <Card className="mb-6">
         {data.owners.map((o) => (
-          <div key={o.id} className="flex items-center justify-between border-b border-slate-50
+          <div key={o.id} className="flex items-center justify-between border-b border-line-soft
                                      py-2 last:border-0">
             <div>
               <div className="text-sm font-medium text-ink">{o.name || o.email}</div>
@@ -241,7 +241,7 @@ export default function AccountPage() {
           <SectionTitle icon={Trash2} note="there is a way back for 30 days">
             Close this account
           </SectionTitle>
-          <Card className="border-rose-100">
+          <Card className="border-negative/20">
             {!showDanger ? (
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm text-muted">
@@ -263,7 +263,7 @@ export default function AccountPage() {
                   className="w-full rounded-lg border border-line px-3 py-2 text-sm" />
                 <input value={confirm} onChange={(e) => setConfirm(e.target.value)}
                   placeholder="Type the business name to confirm"
-                  className="w-full rounded-lg border border-rose-200 px-3 py-2 text-sm" />
+                  className="w-full rounded-lg border border-negative/30 px-3 py-2 text-sm" />
                 <div className="flex gap-2">
                   <Button variant="ghost" onClick={() => { setShowDanger(false); setConfirm(''); }}>
                     Cancel
@@ -272,8 +272,8 @@ export default function AccountPage() {
                     disabled={!confirm || busy === 'delete'}
                     onClick={() => run('delete', () =>
                       post('/v1/account/delete', { confirm, reason }))}
-                    className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold
-                               text-white hover:bg-rose-700 disabled:opacity-40">
+                    className="rounded-lg bg-negative px-4 py-2 text-sm font-semibold
+                               text-white hover:bg-negative disabled:opacity-40">
                     Schedule deletion
                   </button>
                 </div>
@@ -288,10 +288,10 @@ export default function AccountPage() {
 
 function Row({ label, value, ok }: { label: string; value: string; ok: boolean }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-slate-50 py-2.5
+    <div className="flex items-start justify-between gap-4 border-b border-line-soft py-2.5
                     last:border-0">
       <span className="text-sm text-muted">{label}</span>
-      <span className={`text-right text-sm ${ok ? 'text-ink' : 'font-medium text-amber-700'}`}>
+      <span className={`text-right text-sm ${ok ? 'text-ink' : 'font-medium text-warn'}`}>
         {value}
       </span>
     </div>

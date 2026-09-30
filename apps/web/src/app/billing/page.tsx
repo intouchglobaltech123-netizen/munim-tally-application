@@ -72,22 +72,22 @@ export default function BillingPage() {
         subtitle="What you are on, what you are using, and what it costs." />
 
       {said && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2
-                        text-sm text-emerald-800">
+        <div className="mb-4 flex items-center gap-2 rounded-lg bg-positive-soft px-3 py-2
+                        text-sm text-positive">
           <CheckCircle2 size={15} /> {said}
         </div>
       )}
       {err && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg bg-rose-50 px-3 py-2
-                        text-sm text-rose-800">
+        <div className="mb-4 flex items-center gap-2 rounded-lg bg-negative-soft px-3 py-2
+                        text-sm text-negative">
           <AlertTriangle size={15} /> {err}
         </div>
       )}
 
       {/* The problem first, if there is one. */}
       {d.subscription && ['grace', 'past_due'].includes(d.subscription.status) && (
-        <Card className="mb-6 border-amber-200 bg-amber-50">
-          <div className="flex items-start gap-2 text-sm text-amber-900">
+        <Card className="mb-6 border-warn/40 bg-warn-soft">
+          <div className="flex items-start gap-2 text-sm text-warn">
             <AlertTriangle size={15} className="mt-0.5 shrink-0" />
             <span>{d.subscription.message}</span>
           </div>
@@ -95,8 +95,8 @@ export default function BillingPage() {
       )}
 
       {d.atLimit.length > 0 && (
-        <Card className="mb-6 border-amber-200 bg-amber-50">
-          <div className="flex items-start gap-2 text-sm text-amber-900">
+        <Card className="mb-6 border-warn/40 bg-warn-soft">
+          <div className="flex items-start gap-2 text-sm text-warn">
             <AlertTriangle size={15} className="mt-0.5 shrink-0" />
             <span>
               You are at your limit for {d.atLimit.join(', ').toLowerCase()}.
@@ -125,12 +125,12 @@ export default function BillingPage() {
               {d.subscription?.message ?? 'No paid plan yet.'}
             </p>
             {d.subscription?.pendingPlanLabel && (
-              <p className="mt-1 text-xs text-amber-700">
+              <p className="mt-1 text-xs text-warn">
                 Moving to {d.subscription.pendingPlanLabel} at the end of this period.
               </p>
             )}
             {d.subscription?.coupon && (
-              <p className="mt-1 inline-flex items-center gap-1 text-xs text-emerald-700">
+              <p className="mt-1 inline-flex items-center gap-1 text-xs text-positive">
                 <Tag size={11} /> {d.subscription.coupon} applied
               </p>
             )}
@@ -153,18 +153,18 @@ export default function BillingPage() {
       <SectionTitle icon={TrendingUp} note="counted from your data">Usage</SectionTitle>
       <Card className="mb-6">
         {d.usage.map((u) => (
-          <div key={u.key} className="border-b border-slate-50 py-2.5 last:border-0">
+          <div key={u.key} className="border-b border-line-soft py-2.5 last:border-0">
             <div className="mb-1 flex items-center justify-between text-sm">
               <span className="text-ink">{u.label}</span>
-              <span className={u.over ? 'font-medium text-rose-700' : 'text-muted'}>
+              <span className={u.over ? 'font-medium text-negative' : 'text-muted'}>
                 {u.summary}
               </span>
             </div>
             {!u.unlimited && (
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-line-soft">
                 <div
                   className={`h-full rounded-full ${
-                    u.over ? 'bg-rose-500' : u.pct >= 80 ? 'bg-amber-500' : 'bg-brand-500'}`}
+                    u.over ? 'bg-negative' : u.pct >= 80 ? 'bg-warn' : 'bg-brand-500'}`}
                   style={{ width: `${Math.max(2, u.pct)}%` }} />
               </div>
             )}
@@ -265,7 +265,7 @@ export default function BillingPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line text-left text-xs uppercase
-                             tracking-wide text-slate-400">
+                             tracking-wide text-faint">
                 <th className="pb-2 pr-3 font-semibold">Date</th>
                 <th className="pb-2 pr-3 font-semibold">Amount</th>
                 <th className="pb-2 pr-3 font-semibold">Status</th>
@@ -274,7 +274,7 @@ export default function BillingPage() {
             </thead>
             <tbody>
               {d.payments.map((p) => (
-                <tr key={p.id} className="border-b border-slate-50 last:border-0">
+                <tr key={p.id} className="border-b border-line-soft last:border-0">
                   <td className="py-2.5 pr-3 text-muted">{shortDate(p.createdAt)}</td>
                   <td className="py-2.5 pr-3 font-medium text-ink">{p.totalLabel}</td>
                   <td className="py-2.5 pr-3">
@@ -284,7 +284,7 @@ export default function BillingPage() {
                         : p.status === 'failed' ? 'Failed' : p.status}
                     </Badge>
                     {p.failureReason && (
-                      <div className="mt-0.5 text-[11px] text-rose-600">{p.failureReason}</div>
+                      <div className="mt-0.5 text-[11px] text-negative">{p.failureReason}</div>
                     )}
                   </td>
                   <td className="py-2.5 text-muted">{p.invoiceNumber ?? '—'}</td>
@@ -295,8 +295,8 @@ export default function BillingPage() {
         )}
       </Card>
 
-      <p className="mt-5 flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2
-                    text-xs text-slate-500">
+      <p className="mt-5 flex items-start gap-2 rounded-lg bg-canvas px-3 py-2
+                    text-xs text-muted">
         <Info size={13} className="mt-0.5 shrink-0" /> {d.note}
       </p>
     </>
@@ -306,7 +306,7 @@ export default function BillingPage() {
 function Limit({ label, v }: { label: string; v: number | null | undefined }) {
   return (
     <li className="flex items-center gap-1.5">
-      <Check size={11} className="shrink-0 text-emerald-600" />
+      <Check size={11} className="shrink-0 text-positive" />
       {v === null || v === undefined ? `Unlimited ${label}` : `${v} ${label}`}
     </li>
   );

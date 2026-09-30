@@ -44,7 +44,7 @@ export default function NotificationsPage() {
         <div>
           <SectionTitle icon={Moon}>Your quiet hours</SectionTitle>
           <Card className="mb-6">
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-body">
               Nothing between these hours. Your own setting — it does not affect anyone
               else on the account.
             </p>
@@ -57,7 +57,7 @@ export default function NotificationsPage() {
                 className="rounded-lg border border-line px-3 py-2 text-sm">
                 {HOURS.map((h) => <option key={h} value={h}>{hourLabel(h)}</option>)}
               </select>
-              <span className="text-sm text-slate-500">to</span>
+              <span className="text-sm text-muted">to</span>
               <select value={mine.quietTo}
                 onChange={async (e) => {
                   await patch('/v1/notifications/mine', { quietTo: Number(e.target.value) });
@@ -90,19 +90,19 @@ export default function NotificationsPage() {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex min-w-0 gap-2.5">
                       <I size={15} className={`mt-0.5 shrink-0 ${
-                        r.level === 'bad' ? 'text-rose-500'
-                          : r.level === 'warn' ? 'text-amber-500' : 'text-slate-400'}`} />
+                        r.level === 'bad' ? 'text-negative'
+                          : r.level === 'warn' ? 'text-warn' : 'text-faint'}`} />
                       <div className="min-w-0">
-                        <div className="text-sm font-semibold text-slate-800">{r.label}</div>
-                        <div className="text-xs text-slate-500">{r.hint}</div>
+                        <div className="text-sm font-semibold text-ink">{r.label}</div>
+                        <div className="text-xs text-muted">{r.hint}</div>
                         {!r.visibleToMe && (
-                          <div className="mt-0.5 text-[11px] text-amber-700">
+                          <div className="mt-0.5 text-[11px] text-warn">
                             You would not see this one — it belongs to a section you
                             do not have access to.
                           </div>
                         )}
                         {r.minAmountPaise > 0 && (
-                          <div className="mt-0.5 text-[11px] text-slate-400">
+                          <div className="mt-0.5 text-[11px] text-faint">
                             Only above {money(r.minAmountPaise)}
                           </div>
                         )}
@@ -123,8 +123,8 @@ export default function NotificationsPage() {
             })}
           </div>
 
-          <p className="mt-4 flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2
-                        text-xs text-slate-500">
+          <p className="mt-4 flex items-start gap-2 rounded-lg bg-canvas px-3 py-2
+                        text-xs text-muted">
             <Info size={13} className="mt-0.5 shrink-0" />
             {cfg.data.note}
           </p>
@@ -150,15 +150,15 @@ export default function NotificationsPage() {
                 const I = ICON[n.level] ?? Info;
                 return (
                   <div key={n.id}
-                    className={`flex gap-2.5 border-b border-slate-50 py-2.5 last:border-0 ${
+                    className={`flex gap-2.5 border-b border-line-soft py-2.5 last:border-0 ${
                       n.read ? 'opacity-60' : ''}`}>
                     <I size={15} className={`mt-0.5 shrink-0 ${
-                      n.level === 'bad' ? 'text-rose-500'
-                        : n.level === 'warn' ? 'text-amber-500' : 'text-slate-400'}`} />
+                      n.level === 'bad' ? 'text-negative'
+                        : n.level === 'warn' ? 'text-warn' : 'text-faint'}`} />
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-slate-800">{n.title}</div>
-                      {n.body && <div className="text-xs text-slate-500">{n.body}</div>}
-                      <div className="mt-0.5 text-[11px] text-slate-400">
+                      <div className="text-sm font-medium text-ink">{n.title}</div>
+                      {n.body && <div className="text-xs text-muted">{n.body}</div>}
+                      <div className="mt-0.5 text-[11px] text-faint">
                         {n.label} · {ago(n.at)}
                       </div>
                     </div>

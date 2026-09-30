@@ -96,7 +96,7 @@ export default function InsightsPage() {
               <button key={d.key} onClick={() => setBy(d.key)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                   by === d.key ? 'bg-brand-700 text-white'
-                               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                               : 'bg-line-soft text-body hover:bg-line'}`}>
                 {d.label}
               </button>
             ))}
@@ -107,8 +107,8 @@ export default function InsightsPage() {
               {PERIODS.map((p) => (
                 <button key={p.days} onClick={() => setDays(p.days)}
                   className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
-                    days === p.days ? 'bg-slate-800 text-white'
-                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                    days === p.days ? 'bg-ink text-white'
+                                    : 'bg-line-soft text-body hover:bg-line'}`}>
                   {p.label}
                 </button>
               ))}
@@ -128,10 +128,10 @@ export default function InsightsPage() {
 function AttentionCard({ item }: { item: Attention['items'][number] }) {
   const clean = item.count === 0;
   const tone = clean
-    ? { bg: 'bg-emerald-50', ring: 'ring-emerald-200', text: 'text-emerald-700', Icon: CheckCircle2 }
+    ? { bg: 'bg-positive-soft', ring: 'ring-positive/30', text: 'text-positive', Icon: CheckCircle2 }
     : item.tone === 'bad'
-      ? { bg: 'bg-rose-50', ring: 'ring-rose-200', text: 'text-rose-700', Icon: AlertTriangle }
-      : { bg: 'bg-amber-50', ring: 'ring-amber-200', text: 'text-amber-700', Icon: AlertTriangle };
+      ? { bg: 'bg-negative-soft', ring: 'ring-negative/30', text: 'text-negative', Icon: AlertTriangle }
+      : { bg: 'bg-warn-soft', ring: 'ring-warn/30', text: 'text-warn', Icon: AlertTriangle };
 
   return (
     <div className={`rounded-xl ${tone.bg} p-4 ring-1 ${tone.ring}`}>
@@ -140,14 +140,14 @@ function AttentionCard({ item }: { item: Attention['items'][number] }) {
         <div className="min-w-0">
           <div className="flex items-baseline gap-2">
             <span className={`text-2xl font-bold tabular-nums ${tone.text}`}>{item.count}</span>
-            <span className="text-sm font-semibold text-slate-700">{item.label}</span>
+            <span className="text-sm font-semibold text-body">{item.label}</span>
           </div>
           {item.amountPaise != null && item.amountPaise > 0 && (
-            <div className="mt-0.5 text-sm font-semibold tabular-nums text-slate-800">
+            <div className="mt-0.5 text-sm font-semibold tabular-nums text-ink">
               {inr(item.amountPaise)}
             </div>
           )}
-          <p className="mt-1 text-xs leading-relaxed text-slate-500">
+          <p className="mt-1 text-xs leading-relaxed text-muted">
             {clean ? 'Nothing to do here.' : item.hint}
           </p>
         </div>
@@ -170,27 +170,27 @@ function AgeingCard({ data }: { data: Ageing }) {
     <Card>
       <div className="mb-4 flex items-baseline justify-between">
         <div>
-          <div className="text-2xl font-bold tabular-nums text-slate-900">{inr(data.totalPaise)}</div>
-          <div className="text-xs text-slate-500">owed to you in total</div>
+          <div className="text-2xl font-bold tabular-nums text-ink">{inr(data.totalPaise)}</div>
+          <div className="text-xs text-muted">owed to you in total</div>
         </div>
         <div className="text-right">
-          <div className="text-lg font-bold tabular-nums text-rose-600">{inr(data.overduePaise)}</div>
-          <div className="text-xs text-slate-500">{pctOverdue}% past due</div>
+          <div className="text-lg font-bold tabular-nums text-negative">{inr(data.overduePaise)}</div>
+          <div className="text-xs text-muted">{pctOverdue}% past due</div>
         </div>
       </div>
       <div className="space-y-2.5">
         {data.buckets.map((b, i) => {
           // Later buckets are older money, so they darken toward red.
-          const shade = ['bg-emerald-500', 'bg-lime-500', 'bg-amber-500',
-                         'bg-orange-500', 'bg-rose-500', 'bg-rose-700'][i] ?? 'bg-slate-400';
+          const shade = ['bg-positive', 'bg-lime-500', 'bg-warn',
+                         'bg-orange-500', 'bg-negative', 'bg-negative'][i] ?? 'bg-faint';
           return (
             <div key={b.label} className="flex items-center gap-3">
-              <div className="w-16 shrink-0 text-xs font-medium text-slate-500">{b.label}d</div>
-              <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+              <div className="w-16 shrink-0 text-xs font-medium text-muted">{b.label}d</div>
+              <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-line-soft">
                 <div className={`h-full rounded-full ${shade} transition-all`}
                   style={{ width: `${(b.amountPaise / max) * 100}%` }} />
               </div>
-              <div className="w-28 shrink-0 text-right text-xs font-semibold tabular-nums text-slate-700">
+              <div className="w-28 shrink-0 text-right text-xs font-semibold tabular-nums text-body">
                 {b.amountPaise > 0 ? inr(b.amountPaise) : '—'}
               </div>
             </div>
@@ -207,11 +207,11 @@ function AgeingCard({ data }: { data: Ageing }) {
 
 function ProjectionCard({ data }: { data: Projections }) {
   const rows = [
-    { label: 'Already overdue', paise: data.overduePaise, tone: 'text-rose-600',
+    { label: 'Already overdue', paise: data.overduePaise, tone: 'text-negative',
       hint: 'Due date has passed. Chase these.' },
-    { label: 'Due in 15 days', paise: data.next15Paise, tone: 'text-amber-600',
+    { label: 'Due in 15 days', paise: data.next15Paise, tone: 'text-warn',
       hint: 'Expect this in the next fortnight.' },
-    { label: 'Due in 60 days', paise: data.next60Paise, tone: 'text-emerald-600',
+    { label: 'Due in 60 days', paise: data.next60Paise, tone: 'text-positive',
       hint: 'Includes the 15-day figure above.' },
   ];
   return (
@@ -220,8 +220,8 @@ function ProjectionCard({ data }: { data: Projections }) {
         {rows.map((r) => (
           <div key={r.label} className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-slate-700">{r.label}</div>
-              <div className="text-xs text-slate-500">{r.hint}</div>
+              <div className="text-sm font-semibold text-body">{r.label}</div>
+              <div className="text-xs text-muted">{r.hint}</div>
             </div>
             <div className={`shrink-0 text-lg font-bold tabular-nums ${r.tone}`}>
               {inr(r.paise)}
@@ -229,7 +229,7 @@ function ProjectionCard({ data }: { data: Projections }) {
           </div>
         ))}
       </div>
-      <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
+      <p className="mt-4 border-t border-line-soft pt-3 text-xs text-muted">
         Based on each bill&apos;s due date, or the party&apos;s credit terms where
         Tally has not set one.
       </p>
@@ -241,19 +241,19 @@ function TrendCard({ w }: { w: Trends['windows'][number] }) {
   const up = w.changePct != null && w.changePct > 0;
   const flat = w.changePct == null || w.changePct === 0;
   const Icon = flat ? Minus : up ? TrendingUp : TrendingDown;
-  const tone = flat ? 'text-slate-500' : up ? 'text-emerald-600' : 'text-rose-600';
+  const tone = flat ? 'text-muted' : up ? 'text-positive' : 'text-negative';
   const name = w.days === 7 ? 'This week' : w.days === 30 ? 'This month' : 'This quarter';
 
   return (
     <Card>
-      <div className="text-xs font-medium text-slate-500">{name}</div>
-      <div className="mt-1 text-2xl font-bold tabular-nums text-slate-900">{inr(w.amountPaise)}</div>
+      <div className="text-xs font-medium text-muted">{name}</div>
+      <div className="mt-1 text-2xl font-bold tabular-nums text-ink">{inr(w.amountPaise)}</div>
       <div className={`mt-2 flex items-center gap-1.5 text-sm font-semibold ${tone}`}>
         <Icon size={15} />
         {w.changePct == null ? 'No sales before this'
           : `${w.changePct > 0 ? '+' : ''}${w.changePct}%`}
       </div>
-      <div className="mt-0.5 text-xs text-slate-500">
+      <div className="mt-0.5 text-xs text-muted">
         previous {w.days} days: {inr(w.prevPaise)}
       </div>
     </Card>
@@ -265,24 +265,24 @@ function Ranking({ data }: { data: Top }) {
   return (
     <div className="space-y-1">
       {data.rows.map((r, i) => (
-        <div key={r.label} className="group flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-slate-50">
-          <div className="w-6 shrink-0 text-center text-xs font-bold text-slate-400">{i + 1}</div>
+        <div key={r.label} className="group flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-canvas">
+          <div className="w-6 shrink-0 text-center text-xs font-bold text-faint">{i + 1}</div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium text-slate-800">{r.label}</div>
-            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100">
+            <div className="truncate text-sm font-medium text-ink">{r.label}</div>
+            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-line-soft">
               <div className="h-full rounded-full bg-brand-500"
                 style={{ width: `${(r.amountPaise / max) * 100}%` }} />
             </div>
           </div>
           <div className="shrink-0 text-right">
-            <div className="text-sm font-semibold tabular-nums text-slate-900">{inr(r.amountPaise)}</div>
-            <div className="text-xs tabular-nums text-slate-400">
+            <div className="text-sm font-semibold tabular-nums text-ink">{inr(r.amountPaise)}</div>
+            <div className="text-xs tabular-nums text-faint">
               {r.sharePct}%{r.count > 0 ? ` · ${r.count}` : ''}
             </div>
           </div>
         </div>
       ))}
-      <div className="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500">
+      <div className="mt-3 border-t border-line-soft pt-3 text-xs text-muted">
         Top {data.rows.length} of {inr(data.totalPaise)} shown.
       </div>
     </div>

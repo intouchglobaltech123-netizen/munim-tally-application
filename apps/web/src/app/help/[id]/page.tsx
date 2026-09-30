@@ -41,7 +41,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
         right={<Badge tone={closed ? 'muted' : 'ok'}>{d.ticket.statusLabel}</Badge>} />
 
       {err && (
-        <div className="mb-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-800">{err}</div>
+        <div className="mb-4 rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative">{err}</div>
       )}
 
       <div className="mb-6 space-y-3">
@@ -55,7 +55,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
               <span className="text-xs text-faint">{ago(m.at)}</span>
               {m.internal && <Badge tone="warn">Internal</Badge>}
             </div>
-            <p className="whitespace-pre-wrap text-sm text-slate-700">{m.body}</p>
+            <p className="whitespace-pre-wrap text-sm text-body">{m.body}</p>
           </Card>
         ))}
       </div>
@@ -92,8 +92,8 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
               {!d.ticket.rating && [1, 2, 3, 4, 5].map((n) => (
                 <button key={n} disabled={busy}
                   onClick={() => act(() => post(`/v1/tickets/${id}/rate`, { rating: n }))}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100
-                             hover:text-amber-500">
+                  className="rounded-lg p-1.5 text-faint hover:bg-line-soft
+                             hover:text-warn">
                   <Star size={18} />
                 </button>
               ))}

@@ -106,14 +106,14 @@ export default function GstPage() {
           it, so a wrong one is wrong everywhere. */}
       <div className={`mb-5 flex flex-wrap items-center gap-3 rounded-lg px-4 py-3 text-sm
                        ring-1 ${d.company.gstinCheck.valid
-        ? 'bg-emerald-50 ring-emerald-200' : 'bg-rose-50 ring-rose-200'}`}>
+        ? 'bg-positive-soft ring-positive/30' : 'bg-negative-soft ring-negative/30'}`}>
         {d.company.gstinCheck.valid
-          ? <CheckCircle2 size={17} className="text-emerald-600" />
-          : <AlertTriangle size={17} className="text-rose-600" />}
-        <span className="font-semibold text-slate-800">
+          ? <CheckCircle2 size={17} className="text-positive" />
+          : <AlertTriangle size={17} className="text-negative" />}
+        <span className="font-semibold text-ink">
           {d.company.gstin || 'No GSTIN set in Tally'}
         </span>
-        <span className="text-slate-600">{d.company.gstinCheck.message}</span>
+        <span className="text-body">{d.company.gstinCheck.message}</span>
         {d.company.gstinCheck.stateName && (
           <Badge tone="ok">{d.company.gstinCheck.stateName}</Badge>
         )}
@@ -124,7 +124,7 @@ export default function GstPage() {
           <button key={p.key} onClick={() => setPeriod(p.key)}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
               period === p.key ? 'bg-brand-700 text-white'
-                               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                               : 'bg-line-soft text-body hover:bg-line'}`}>
             {p.label}
           </button>
         ))}
@@ -133,35 +133,35 @@ export default function GstPage() {
       {/* The position, which is the figure people come for. */}
       <div className="mb-6 grid gap-3 sm:grid-cols-3">
         <Card>
-          <div className="text-xs font-medium text-slate-500">Output tax (on sales)</div>
-          <div className="mt-1 text-2xl font-bold tabular-nums text-slate-900">
+          <div className="text-xs font-medium text-muted">Output tax (on sales)</div>
+          <div className="mt-1 text-2xl font-bold tabular-nums text-ink">
             {money(pos.outputTaxPaise)}
           </div>
-          <div className="text-[11px] text-slate-400">
+          <div className="text-[11px] text-faint">
             {d.outward.count} invoices, less {d.creditNotes.count} credit notes
           </div>
         </Card>
         <Card>
-          <div className="text-xs font-medium text-slate-500">Input tax (on purchases)</div>
-          <div className="mt-1 text-2xl font-bold tabular-nums text-slate-900">
+          <div className="text-xs font-medium text-muted">Input tax (on purchases)</div>
+          <div className="mt-1 text-2xl font-bold tabular-nums text-ink">
             {money(pos.inputTaxPaise)}
           </div>
-          <div className="text-[11px] text-slate-400">
+          <div className="text-[11px] text-faint">
             {d.inward.count} bills, less {d.debitNotes.count} debit notes
           </div>
         </Card>
-        <Card className={pos.direction === 'payable' ? 'ring-2 ring-rose-300'
-          : pos.direction === 'credit' ? 'ring-2 ring-emerald-300' : ''}>
-          <div className="text-xs font-medium text-slate-500">
+        <Card className={pos.direction === 'payable' ? 'ring-2 ring-negative/30'
+          : pos.direction === 'credit' ? 'ring-2 ring-positive/30' : ''}>
+          <div className="text-xs font-medium text-muted">
             {pos.direction === 'credit' ? 'Credit carried forward'
               : pos.direction === 'payable' ? 'Payable to government' : 'Net position'}
           </div>
           <div className={`mt-1 text-2xl font-bold tabular-nums ${
-            pos.direction === 'payable' ? 'text-rose-700'
-              : pos.direction === 'credit' ? 'text-emerald-700' : 'text-slate-900'}`}>
+            pos.direction === 'payable' ? 'text-negative'
+              : pos.direction === 'credit' ? 'text-positive' : 'text-ink'}`}>
             {money(Math.abs(pos.netPaise))}
           </div>
-          <div className="text-[11px] text-slate-400">
+          <div className="text-[11px] text-faint">
             {pos.direction === 'credit'
               ? 'More input than output — nothing to pay.'
               : pos.direction === 'nil' ? 'Nothing either way.'
@@ -178,7 +178,7 @@ export default function GstPage() {
                             : 'text-muted hover:bg-line-soft hover:text-ink'}`}>
             {t.label}
             {t.key === 'health' && health.data && health.data.total > 0 && (
-              <span className="ml-1.5 rounded-full bg-rose-600 px-1.5 text-[10px] text-white">
+              <span className="ml-1.5 rounded-full bg-negative px-1.5 text-[10px] text-white">
                 {health.data.total}
               </span>
             )}
@@ -222,7 +222,7 @@ export default function GstPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-line text-left text-xs uppercase
-                                 tracking-wide text-slate-400">
+                                 tracking-wide text-faint">
                     <th className="pb-2 pr-3 font-semibold">Rate</th>
                     <th className="pb-2 pr-3 text-right font-semibold">Invoices</th>
                     <th className="pb-2 pr-3 text-right font-semibold">Taxable</th>
@@ -234,13 +234,13 @@ export default function GstPage() {
                 </thead>
                 <tbody>
                   {d.byRate.map((r) => (
-                    <tr key={r.ratePct} className="border-b border-slate-50 last:border-0">
+                    <tr key={r.ratePct} className="border-b border-line-soft last:border-0">
                       <td className="py-2 pr-3 font-semibold">{r.ratePct}%</td>
-                      <td className="py-2 pr-3 text-right tabular-nums text-slate-500">{r.count}</td>
+                      <td className="py-2 pr-3 text-right tabular-nums text-muted">{r.count}</td>
                       <td className="py-2 pr-3 text-right tabular-nums">{money(r.taxable)}</td>
-                      <td className="py-2 pr-3 text-right tabular-nums text-slate-500">{money(r.tax.cgst)}</td>
-                      <td className="py-2 pr-3 text-right tabular-nums text-slate-500">{money(r.tax.sgst)}</td>
-                      <td className="py-2 pr-3 text-right tabular-nums text-slate-500">{money(r.tax.igst)}</td>
+                      <td className="py-2 pr-3 text-right tabular-nums text-muted">{money(r.tax.cgst)}</td>
+                      <td className="py-2 pr-3 text-right tabular-nums text-muted">{money(r.tax.sgst)}</td>
+                      <td className="py-2 pr-3 text-right tabular-nums text-muted">{money(r.tax.igst)}</td>
                       <td className="py-2 text-right tabular-nums font-semibold">{money(r.taxTotal)}</td>
                     </tr>
                   ))}
@@ -255,10 +255,10 @@ export default function GstPage() {
         health.loading && !health.data ? <Spinner /> : (
           <>
             {health.data?.total === 0 ? (
-              <div className="flex items-center gap-3 rounded-lg bg-emerald-50 px-4 py-3
-                              ring-1 ring-emerald-200">
-                <CheckCircle2 size={18} className="text-emerald-600" />
-                <span className="text-sm font-semibold text-emerald-900">
+              <div className="flex items-center gap-3 rounded-lg bg-positive-soft px-4 py-3
+                              ring-1 ring-positive/30">
+                <CheckCircle2 size={18} className="text-positive" />
+                <span className="text-sm font-semibold text-positive">
                   Nothing wrong found in this period.
                 </span>
               </div>
@@ -268,17 +268,17 @@ export default function GstPage() {
                   <Card key={f.key}>
                     <div className="flex items-start gap-3">
                       <AlertTriangle size={17}
-                        className={f.tone === 'bad' ? 'mt-0.5 text-rose-600' : 'mt-0.5 text-amber-600'} />
+                        className={f.tone === 'bad' ? 'mt-0.5 text-negative' : 'mt-0.5 text-warn'} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-slate-900">{f.label}</span>
+                          <span className="font-semibold text-ink">{f.label}</span>
                           <Badge tone={f.tone === 'bad' ? 'bad' : 'warn'}>{f.count}</Badge>
                         </div>
-                        <p className="mt-0.5 text-xs text-slate-500">{f.detail}</p>
+                        <p className="mt-0.5 text-xs text-muted">{f.detail}</p>
                         {f.items && f.items.length > 0 && (
-                          <div className="mt-2 max-h-56 overflow-auto rounded-lg bg-slate-50 p-2">
+                          <div className="mt-2 max-h-56 overflow-auto rounded-lg bg-canvas p-2">
                             {f.items.map((it, i) => (
-                              <div key={i} className="py-0.5 font-mono text-[11px] text-slate-600">
+                              <div key={i} className="py-0.5 font-mono text-[11px] text-body">
                                 {formatItem(it)}
                               </div>
                             ))}
@@ -290,8 +290,8 @@ export default function GstPage() {
                 ))}
               </div>
             )}
-            <p className="mt-5 flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2
-                          text-xs text-slate-500">
+            <p className="mt-5 flex items-start gap-2 rounded-lg bg-canvas px-3 py-2
+                          text-xs text-muted">
               <Info size={13} className="mt-0.5 shrink-0" />
               {health.data?.note}
             </p>
@@ -303,10 +303,10 @@ export default function GstPage() {
         hsn.loading && !hsn.data ? <Spinner /> : (
           <>
             {hsn.data && hsn.data.missingHsn.lines > 0 && (
-              <div className="mb-4 flex items-start gap-2.5 rounded-lg bg-amber-50 px-4 py-3
-                              text-sm ring-1 ring-amber-200">
-                <FileWarning size={17} className="mt-0.5 shrink-0 text-amber-600" />
-                <span className="text-amber-900">
+              <div className="mb-4 flex items-start gap-2.5 rounded-lg bg-warn-soft px-4 py-3
+                              text-sm ring-1 ring-warn/30">
+                <FileWarning size={17} className="mt-0.5 shrink-0 text-warn" />
+                <span className="text-warn">
                   <b>{hsn.data.missingHsn.lines} lines have no HSN</b>, covering{' '}
                   {money(hsn.data.missingHsn.valuePaise)}. A return needs HSN on every line
                   above the turnover threshold — set them on the item in Tally.
@@ -322,7 +322,7 @@ export default function GstPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-line text-left text-xs uppercase
-                                   tracking-wide text-slate-400">
+                                   tracking-wide text-faint">
                       <th className="pb-2 pr-3 font-semibold">HSN/SAC</th>
                       <th className="pb-2 pr-3 text-right font-semibold">Rate</th>
                       <th className="pb-2 pr-3 text-right font-semibold">Qty</th>
@@ -332,7 +332,7 @@ export default function GstPage() {
                   </thead>
                   <tbody>
                     {hsn.data.rows.filter((r) => matches(r, hsnSpecs, hf)).map((r) => (
-                      <tr key={r.hsn + r.ratePct} className="border-b border-slate-50 last:border-0">
+                      <tr key={r.hsn + r.ratePct} className="border-b border-line-soft last:border-0">
                         <td className="py-2 pr-3 font-mono">{r.hsn}</td>
                         <td className="py-2 pr-3 text-right tabular-nums">
                           {r.ratePct > 0 ? `${r.ratePct}%` : '—'}
@@ -340,7 +340,7 @@ export default function GstPage() {
                         <td className="py-2 pr-3 text-right tabular-nums">
                           {r.qty} {r.unit}
                         </td>
-                        <td className="py-2 pr-3 text-right tabular-nums text-slate-500">{r.vouchers}</td>
+                        <td className="py-2 pr-3 text-right tabular-nums text-muted">{r.vouchers}</td>
                         <td className="py-2 text-right tabular-nums font-semibold">
                           {money(r.valuePaise)}
                         </td>
@@ -365,7 +365,7 @@ export default function GstPage() {
                 <table className="w-full min-w-[680px] text-sm">
                   <thead>
                     <tr className="border-b border-line text-left text-xs uppercase
-                                   tracking-wide text-slate-400">
+                                   tracking-wide text-faint">
                       <th className="pb-2 pr-3 font-semibold">Party</th>
                       <th className="pb-2 pr-3 font-semibold">GSTIN</th>
                       <th className="pb-2 pr-3 text-right font-semibold">Sales</th>
@@ -375,9 +375,9 @@ export default function GstPage() {
                   </thead>
                   <tbody>
                     {parties.data.parties.filter((p) => matches(p, partySpecs, pf)).map((p) => (
-                      <tr key={p.party} className="border-b border-slate-50 last:border-0">
+                      <tr key={p.party} className="border-b border-line-soft last:border-0">
                         <td className="py-2 pr-3">
-                          <div className="font-medium text-slate-800">{p.party}</div>
+                          <div className="font-medium text-ink">{p.party}</div>
                           <Badge tone={p.kind === 'b2b' ? 'ok' : 'warn'}>
                             {p.kind.toUpperCase()}
                           </Badge>
@@ -385,7 +385,7 @@ export default function GstPage() {
                         <td className="py-2 pr-3">
                           <span className="font-mono text-xs">{p.gstin || '—'}</span>
                           {p.gstinCheck && !p.gstinCheck.valid && (
-                            <div className="text-[11px] text-rose-600">{p.gstinCheck.message}</div>
+                            <div className="text-[11px] text-negative">{p.gstinCheck.message}</div>
                           )}
                         </td>
                         <td className="py-2 pr-3 text-right tabular-nums">{money(p.sales)}</td>
@@ -403,8 +403,8 @@ export default function GstPage() {
         )
       )}
 
-      <p className="mt-6 flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2
-                    text-xs text-slate-500">
+      <p className="mt-6 flex items-start gap-2 rounded-lg bg-canvas px-3 py-2
+                    text-xs text-muted">
         <Info size={13} className="mt-0.5 shrink-0" />
         {d.note}
       </p>
@@ -426,12 +426,12 @@ function Row({ k, v, sub, strong }: {
 }) {
   return (
     <div className={`flex items-baseline justify-between gap-4 py-1.5 ${
-      strong ? 'border-t border-slate-200 font-semibold' : 'border-b border-slate-50'}`}>
-      <span className="text-sm text-slate-600">
+      strong ? 'border-t border-line font-semibold' : 'border-b border-line-soft'}`}>
+      <span className="text-sm text-body">
         {k}
-        {sub && <span className="ml-1.5 text-[11px] text-slate-400">{sub}</span>}
+        {sub && <span className="ml-1.5 text-[11px] text-faint">{sub}</span>}
       </span>
-      <span className={`tabular-nums ${strong ? 'text-slate-900' : 'text-sm text-slate-700'}`}>
+      <span className={`tabular-nums ${strong ? 'text-ink' : 'text-sm text-body'}`}>
         {v}
       </span>
     </div>

@@ -90,12 +90,12 @@ export default function PartyPage({ params }: { params: Promise<{ name: string }
       </div>
 
       {p.overLimit && (
-        <div className="mb-5 flex items-start gap-2.5 rounded-lg bg-rose-50 px-4 py-3
-                        text-sm ring-1 ring-rose-200">
-          <AlertTriangle size={17} className="mt-0.5 shrink-0 text-rose-600" />
+        <div className="mb-5 flex items-start gap-2.5 rounded-lg bg-negative-soft px-4 py-3
+                        text-sm ring-1 ring-negative/30">
+          <AlertTriangle size={17} className="mt-0.5 shrink-0 text-negative" />
           <div>
-            <span className="font-semibold text-rose-900">Over their credit limit</span>
-            <p className="mt-0.5 text-xs text-rose-800">
+            <span className="font-semibold text-negative">Over their credit limit</span>
+            <p className="mt-0.5 text-xs text-negative">
               Owes {money(p.closingPaise)} against a limit of {money(p.creditLimitPaise)}.
             </p>
           </div>
@@ -114,7 +114,7 @@ export default function PartyPage({ params }: { params: Promise<{ name: string }
 
       {/* Tags are Munim's own - Tally has no concept of them. */}
       <div className="mb-6 flex flex-wrap items-center gap-2">
-        <Tag size={14} className="text-slate-400" />
+        <Tag size={14} className="text-faint" />
         {p.tags.map((t) => (
           <span key={t} className="inline-flex items-center gap-1 rounded-full bg-brand-50
                                    px-2.5 py-1 text-xs font-medium text-brand-900">
@@ -141,11 +141,11 @@ export default function PartyPage({ params }: { params: Promise<{ name: string }
         ) : (
           <button onClick={() => setEditingTags(true)}
             className="inline-flex items-center gap-1 rounded-full border border-dashed
-                       border-slate-300 px-2.5 py-1 text-xs text-slate-500 hover:border-brand-400">
+                       border-line px-2.5 py-1 text-xs text-muted hover:border-brand-400">
             <Plus size={11} /> Tag
           </button>
         )}
-        <span className="text-[11px] text-slate-400">
+        <span className="text-[11px] text-faint">
           Tags are Munim&apos;s own — Tally never sees them.
         </span>
       </div>
@@ -181,8 +181,8 @@ export default function PartyPage({ params }: { params: Promise<{ name: string }
             <>
               <div className="flex items-baseline gap-2">
                 <span className={`text-xl font-bold ${
-                  (data.behaviour.daysAgainstTerms ?? 0) > 15 ? 'text-rose-700'
-                    : (data.behaviour.daysAgainstTerms ?? 0) > 3 ? 'text-amber-700'
+                  (data.behaviour.daysAgainstTerms ?? 0) > 15 ? 'text-negative'
+                    : (data.behaviour.daysAgainstTerms ?? 0) > 3 ? 'text-warn'
                     : 'text-ink'}`}>
                   {data.behaviour.verdict}
                 </span>
@@ -226,7 +226,7 @@ export default function PartyPage({ params }: { params: Promise<{ name: string }
                 </span>
                 {data.ageing.overduePercent > 0 && (
                   <span className={`text-sm font-semibold ${
-                    data.ageing.overduePercent > 50 ? 'text-rose-700' : 'text-amber-700'}`}>
+                    data.ageing.overduePercent > 50 ? 'text-negative' : 'text-warn'}`}>
                     {data.ageing.overduePercent}% overdue
                   </span>
                 )}
@@ -251,11 +251,11 @@ export default function PartyPage({ params }: { params: Promise<{ name: string }
             <Card>
               <Table head={['Bill', 'Date', 'Due', 'Amount', '']}>
                 {data.openBills.map((b) => (
-                  <tr key={b.ref} className="border-b border-slate-50 last:border-0">
-                    <td className="py-2.5 pr-3 font-medium text-slate-800">{b.ref}</td>
-                    <td className="py-2.5 pr-3 text-slate-500">{date(b.billDate)}</td>
-                    <td className="py-2.5 pr-3 text-slate-500">{date(b.dueDate)}</td>
-                    <td className="py-2.5 pr-3 text-right tabular-nums font-semibold text-slate-900">
+                  <tr key={b.ref} className="border-b border-line-soft last:border-0">
+                    <td className="py-2.5 pr-3 font-medium text-ink">{b.ref}</td>
+                    <td className="py-2.5 pr-3 text-muted">{date(b.billDate)}</td>
+                    <td className="py-2.5 pr-3 text-muted">{date(b.dueDate)}</td>
+                    <td className="py-2.5 pr-3 text-right tabular-nums font-semibold text-ink">
                       {money(b.amountPaise)}
                     </td>
                     <td className="py-2.5">
@@ -355,9 +355,9 @@ function AgeBar({ label, paise, total, money, tone }: {
   return (
     <div className="flex items-center gap-2.5 text-xs">
       <span className="w-24 shrink-0 text-muted">{label}</span>
-      <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
+      <div className="h-2 flex-1 overflow-hidden rounded-full bg-line-soft">
         <div className={`h-full rounded-full ${
-          tone === 'ok' ? 'bg-emerald-500' : 'bg-rose-500'}`}
+          tone === 'ok' ? 'bg-positive' : 'bg-negative'}`}
           style={{ width: `${Math.max(2, pct)}%` }} />
       </div>
       <span className="w-24 shrink-0 text-right font-medium tabular-nums text-ink">
@@ -376,11 +376,11 @@ function VoucherTable({ rows, money, date }: {
     <Card>
       <Table head={['No.', 'Type', 'Date', 'Amount']}>
         {rows.map((v) => (
-          <tr key={v.id} className="border-b border-slate-50 last:border-0">
-            <td className="py-2.5 pr-3 font-medium text-slate-800">{v.no || '—'}</td>
-            <td className="py-2.5 pr-3 text-slate-500">{v.type ?? ''}</td>
-            <td className="py-2.5 pr-3 text-slate-500">{date(v.date)}</td>
-            <td className="py-2.5 text-right tabular-nums font-semibold text-slate-900">
+          <tr key={v.id} className="border-b border-line-soft last:border-0">
+            <td className="py-2.5 pr-3 font-medium text-ink">{v.no || '—'}</td>
+            <td className="py-2.5 pr-3 text-muted">{v.type ?? ''}</td>
+            <td className="py-2.5 pr-3 text-muted">{date(v.date)}</td>
+            <td className="py-2.5 text-right tabular-nums font-semibold text-ink">
               {money(Math.abs(v.amountPaise))}
             </td>
           </tr>
@@ -395,7 +395,7 @@ function Table({ head, children }: { head: string[]; children: React.ReactNode }
     <div className="overflow-x-auto">
       <table className="w-full min-w-[480px] text-sm">
         <thead>
-          <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-slate-400">
+          <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-faint">
             {head.map((h, i) => (
               <th key={h + i}
                 className={`pb-2 pr-3 font-semibold ${i >= 3 ? 'text-right' : ''}`}>{h}</th>
@@ -414,11 +414,11 @@ function Row({ k, v, icon: Icon, mono }: {
   k: string; v: string; icon?: typeof Phone; mono?: boolean;
 }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-slate-50 py-2 last:border-0">
-      <span className="inline-flex items-center gap-1.5 text-sm text-slate-500">
-        {Icon && <Icon size={12} className="text-slate-400" />}{k}
+    <div className="flex items-baseline justify-between gap-4 border-b border-line-soft py-2 last:border-0">
+      <span className="inline-flex items-center gap-1.5 text-sm text-muted">
+        {Icon && <Icon size={12} className="text-faint" />}{k}
       </span>
-      <span className={`text-right text-sm ${v ? 'font-semibold text-slate-800' : 'text-slate-300'} ${
+      <span className={`text-right text-sm ${v ? 'font-semibold text-ink' : 'text-faint'} ${
         mono ? 'font-mono' : ''}`}>
         {v || 'Not set in Tally'}
       </span>
@@ -429,9 +429,9 @@ function Row({ k, v, icon: Icon, mono }: {
 function Stat({ label, value, tone }: { label: string; value: string; tone?: 'good' | 'bad' }) {
   return (
     <Card>
-      <div className="text-xs font-medium text-slate-500">{label}</div>
+      <div className="text-xs font-medium text-muted">{label}</div>
       <div className={`mt-1 text-xl font-bold tabular-nums ${
-        tone === 'good' ? 'text-emerald-700' : tone === 'bad' ? 'text-rose-700' : 'text-slate-900'}`}>
+        tone === 'good' ? 'text-positive' : tone === 'bad' ? 'text-negative' : 'text-ink'}`}>
         {value}
       </div>
     </Card>

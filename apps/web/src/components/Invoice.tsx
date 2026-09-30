@@ -37,11 +37,11 @@ export default function Invoice({ doc, money }: {
   const anyDiscount = show.discount && doc.lines.some((l) => l.discountPaise > 0);
 
   const cell = dense ? 'px-1 py-0.5' : 'px-2 py-1.5';
-  const rule = tpl.type.borders ? 'border border-slate-300' : 'border-0';
+  const rule = tpl.type.borders ? 'border border-line' : 'border-0';
 
   return (
     <div
-      className="print-area mx-auto bg-white text-slate-900"
+      className="print-area mx-auto bg-paper text-paper-ink"
       style={{
         /* Millimetres, so what is on screen is what comes out of the printer. */
         width: `${tpl.page.widthMm}mm`,
@@ -79,26 +79,26 @@ export default function Invoice({ doc, money }: {
         <div className="text-right">
           <div className="text-xl font-bold uppercase tracking-wide"
             style={{ color: tpl.type.accent }}>{d.title}</div>
-          {d.note && <div className="text-[11px] text-slate-500">{d.note}</div>}
+          {d.note && <div className="text-[11px] text-muted">{d.note}</div>}
         </div>
       </div>
 
       {d.isCancelled && (
-        <div className="mt-3 border-2 border-rose-600 px-3 py-1.5 text-center text-sm
-                        font-bold uppercase text-rose-700">
+        <div className="mt-3 border-2 border-negative px-3 py-1.5 text-center text-sm
+                        font-bold uppercase text-negative">
           Cancelled
         </div>
       )}
       {d.isCommitment && (
-        <div className="mt-3 border border-slate-400 px-3 py-1.5 text-center text-xs">
+        <div className="mt-3 border border-faint px-3 py-1.5 text-center text-xs">
           This is an order, not a tax invoice. Not valid for input tax credit.
         </div>
       )}
 
       {/* Parties and invoice particulars. */}
-      <div className="mt-4 grid grid-cols-2 gap-0 border border-slate-300">
-        <div className="border-r border-slate-300 p-3">
-          <div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+      <div className="mt-4 grid grid-cols-2 gap-0 border border-line">
+        <div className="border-r border-line p-3">
+          <div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-muted">
             Billed to
           </div>
           <div className="font-semibold">{doc.buyer.name}</div>
@@ -116,7 +116,7 @@ export default function Invoice({ doc, money }: {
           )}
           {show.shipping && doc.buyer.shippingAddress && (
             <div className="mt-2">
-              <div className="text-[10px] font-bold uppercase text-slate-500">Shipped to</div>
+              <div className="text-[10px] font-bold uppercase text-muted">Shipped to</div>
               <div className="text-xs">{doc.buyer.shippingAddress}</div>
             </div>
           )}
@@ -135,9 +135,9 @@ export default function Invoice({ doc, money }: {
       {/* Lines. */}
       <table className={`mt-4 w-full border-collapse ${rule}`}>
         <thead>
-          <tr className="bg-slate-100 text-left text-[10px] uppercase tracking-wide">
-            <th className="border border-slate-300 px-2 py-1.5">#</th>
-            <th className="border border-slate-300 px-2 py-1.5">Description</th>
+          <tr className="bg-line-soft text-left text-[10px] uppercase tracking-wide">
+            <th className="border border-line px-2 py-1.5">#</th>
+            <th className="border border-line px-2 py-1.5">Description</th>
             {show.hsn && <th className={`${rule} ${cell}`}>HSN/SAC</th>}
             <th className={`${rule} ${cell} text-right`}>Qty</th>
             <th className={`${rule} ${cell} text-right`}>Rate</th>
@@ -150,7 +150,7 @@ export default function Invoice({ doc, money }: {
           {doc.lines.length === 0 ? (
             <tr>
               <td colSpan={hasTax ? 7 : 6}
-                className="border border-slate-300 px-2 py-3 text-center text-xs text-slate-500">
+                className="border border-line px-2 py-3 text-center text-xs text-muted">
                 {/* Honest rather than blank: many shops bill without inventory
                     lines, and an empty table looks like a fault. */}
                 This entry was recorded without item lines in Tally.
@@ -209,7 +209,7 @@ export default function Invoice({ doc, money }: {
 
       {/* The line that stops a digit being added to a printed figure. */}
       {show.inWords && (
-        <div className="mt-3 border-t border-slate-300 pt-2 text-xs">
+        <div className="mt-3 border-t border-line pt-2 text-xs">
           <span className="font-semibold">Amount in words: </span>
           {t.inWords}
         </div>
@@ -218,10 +218,10 @@ export default function Invoice({ doc, money }: {
       {/* Where to pay, and the fastest way to do it. */}
       {(show.bank || show.upiQr) && (doc.seller.bank.name || doc.upiQr) && (
         <div className="mt-4 flex flex-wrap items-start justify-between gap-6
-                        border-t border-slate-300 pt-3">
+                        border-t border-line pt-3">
           {show.bank && doc.seller.bank.name && (
             <div className="text-xs">
-              <div className="mb-0.5 font-bold uppercase tracking-wide text-slate-500">
+              <div className="mb-0.5 font-bold uppercase tracking-wide text-muted">
                 Bank details
               </div>
               <div>{doc.seller.bank.name}{doc.seller.bank.branch ? `, ${doc.seller.bank.branch}` : ''}</div>
@@ -235,23 +235,23 @@ export default function Invoice({ doc, money }: {
               <img src={doc.upiQr.dataUri} alt="UPI payment QR"
                 className="h-24 w-24" />
               <div className="mt-1 font-semibold">Scan to pay ₹{doc.upiQr.amount}</div>
-              <div className="text-[10px] text-slate-500">{doc.upiQr.upiId}</div>
+              <div className="text-[10px] text-muted">{doc.upiQr.upiId}</div>
             </div>
           )}
         </div>
       )}
 
       {show.terms && tpl.text.terms && (
-        <div className="mt-4 border-t border-slate-300 pt-2 text-xs">
-          <div className="mb-0.5 font-bold uppercase tracking-wide text-slate-500">Terms</div>
+        <div className="mt-4 border-t border-line pt-2 text-xs">
+          <div className="mb-0.5 font-bold uppercase tracking-wide text-muted">Terms</div>
           {tpl.text.terms.split('\n').map((l, i) => <div key={i}>{l}</div>)}
         </div>
       )}
 
       {t.tax.mismatch && (
-        <div className="no-print mt-4 flex items-start gap-2 border border-amber-400
-                        bg-amber-50 p-3 text-xs">
-          <AlertTriangle size={15} className="mt-0.5 shrink-0 text-amber-600" />
+        <div className="no-print mt-4 flex items-start gap-2 border border-warn/40
+                        bg-warn-soft p-3 text-xs">
+          <AlertTriangle size={15} className="mt-0.5 shrink-0 text-warn" />
           <span>
             <b>Check this tax split.</b> Both parties are in{' '}
             {t.tax.expectedSupply === 'intra' ? 'the same state' : 'different states'}, so this
@@ -264,27 +264,27 @@ export default function Invoice({ doc, money }: {
 
       {show.hsnSummary && doc.hsnSummary.length > 0 && (
         <div className="mt-5">
-          <div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+          <div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-muted">
             HSN summary
           </div>
-          <table className="w-full border-collapse border border-slate-300 text-xs">
+          <table className="w-full border-collapse border border-line text-xs">
             <thead>
-              <tr className="bg-slate-100 text-left">
-                <th className="border border-slate-300 px-2 py-1">HSN/SAC</th>
-                <th className="border border-slate-300 px-2 py-1 text-right">Qty</th>
-                <th className="border border-slate-300 px-2 py-1 text-right">Rate</th>
-                <th className="border border-slate-300 px-2 py-1 text-right">Value</th>
+              <tr className="bg-line-soft text-left">
+                <th className="border border-line px-2 py-1">HSN/SAC</th>
+                <th className="border border-line px-2 py-1 text-right">Qty</th>
+                <th className="border border-line px-2 py-1 text-right">Rate</th>
+                <th className="border border-line px-2 py-1 text-right">Value</th>
               </tr>
             </thead>
             <tbody>
               {doc.hsnSummary.map((h) => (
                 <tr key={h.hsn}>
-                  <td className="border border-slate-300 px-2 py-1 font-mono">{h.hsn}</td>
-                  <td className="border border-slate-300 px-2 py-1 text-right tabular-nums">{h.qty}</td>
-                  <td className="border border-slate-300 px-2 py-1 text-right tabular-nums">
+                  <td className="border border-line px-2 py-1 font-mono">{h.hsn}</td>
+                  <td className="border border-line px-2 py-1 text-right tabular-nums">{h.qty}</td>
+                  <td className="border border-line px-2 py-1 text-right tabular-nums">
                     {h.gstRatePct > 0 ? `${h.gstRatePct}%` : '—'}
                   </td>
-                  <td className="border border-slate-300 px-2 py-1 text-right tabular-nums">
+                  <td className="border border-line px-2 py-1 text-right tabular-nums">
                     {money(h.valuePaise)}
                   </td>
                 </tr>
@@ -301,7 +301,7 @@ export default function Invoice({ doc, money }: {
       )}
 
       <div className="mt-10 flex items-end justify-between gap-6">
-        <div className="text-[10px] text-slate-500">
+        <div className="text-[10px] text-muted">
           {show.footer && tpl.text.footer
             ? tpl.text.footer
             : 'This is a computer-generated document from Munim, read from Tally.'}
@@ -309,10 +309,10 @@ export default function Invoice({ doc, money }: {
         {show.signature && (
           <div className="text-center">
             <div className="h-12" />
-            <div className="border-t border-slate-400 px-8 pt-1 text-xs">
+            <div className="border-t border-faint px-8 pt-1 text-xs">
               For {doc.seller.name}
             </div>
-            <div className="text-[10px] text-slate-500">
+            <div className="text-[10px] text-muted">
               {tpl.text.signatory || 'Authorised signatory'}
             </div>
           </div>
@@ -325,7 +325,7 @@ export default function Invoice({ doc, money }: {
 function Field({ k, v }: { k: string; v: string }) {
   return (
     <div className="flex justify-between gap-3 py-0.5 text-xs">
-      <span className="text-slate-500">{k}</span>
+      <span className="text-muted">{k}</span>
       <span className="font-semibold">{v}</span>
     </div>
   );
@@ -334,7 +334,7 @@ function Field({ k, v }: { k: string; v: string }) {
 function Total({ k, v }: { k: string; v: string }) {
   return (
     <tr>
-      <td className="py-1 text-xs text-slate-600">{k}</td>
+      <td className="py-1 text-xs text-body">{k}</td>
       <td className="py-1 text-right text-xs tabular-nums">{v}</td>
     </tr>
   );

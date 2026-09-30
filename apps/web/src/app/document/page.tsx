@@ -86,14 +86,14 @@ export default function DocumentPage() {
       <PageTitle title="Document design"
         subtitle="How your invoices and statements look when you print or share them."
         right={saved ? (
-          <span className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-600">
+          <span className="inline-flex items-center gap-1 text-sm font-semibold text-positive">
             <Check size={14} /> Saved
           </span>
         ) : undefined} />
 
       {err && (
-        <div className="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700
-                        ring-1 ring-rose-200">{err}</div>
+        <div className="mb-4 rounded-lg bg-negative-soft px-4 py-3 text-sm text-negative
+                        ring-1 ring-negative/30">{err}</div>
       )}
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
@@ -109,7 +109,7 @@ export default function DocumentPage() {
               ))}
             </div>
             {t.page.size === 'thermal' && (
-              <p className="mt-2 text-xs text-slate-500">
+              <p className="mt-2 text-xs text-muted">
                 80mm roll. Spacing is tightened automatically — anything else runs off the paper.
               </p>
             )}
@@ -123,7 +123,7 @@ export default function DocumentPage() {
               ))}
             </div>
 
-            <label className="mt-4 block text-xs font-semibold text-slate-600">
+            <label className="mt-4 block text-xs font-semibold text-body">
               Margin: {t.page.marginMm}mm
             </label>
             <input type="range" min={0} max={40} value={t.page.marginMm}
@@ -142,21 +142,21 @@ export default function DocumentPage() {
               ))}
             </div>
 
-            <label className="mt-4 block text-xs font-semibold text-slate-600">
+            <label className="mt-4 block text-xs font-semibold text-body">
               Size: {t.type.sizePt}pt
             </label>
             <input type="range" min={8} max={18} value={t.type.sizePt}
               onChange={(e) => save({ fontSize: Number(e.target.value) })}
               className="mt-1 w-full" />
 
-            <div className="mt-4 text-xs font-semibold text-slate-600">Accent</div>
+            <div className="mt-4 text-xs font-semibold text-body">Accent</div>
             <div className="mt-1.5 flex flex-wrap gap-2">
               {ACCENTS.map((c) => (
                 <button key={c} onClick={() => save({ accent: c })} disabled={saving}
                   aria-label={`Accent ${c}`}
                   className={`h-7 w-7 rounded-full ring-2 transition ${
                     t.type.accent.toLowerCase() === c.toLowerCase()
-                      ? 'ring-slate-900' : 'ring-transparent hover:ring-slate-300'}`}
+                      ? 'ring-ink' : 'ring-transparent hover:ring-line'}`}
                   style={{ background: c }} />
               ))}
             </div>
@@ -211,21 +211,21 @@ export default function DocumentPage() {
           <SectionTitle icon={FileText} note="your most recent invoice, with these settings">
             Preview
           </SectionTitle>
-          <div className="overflow-auto rounded-lg border border-line bg-slate-100 p-4">
+          <div className="overflow-auto rounded-lg border border-line bg-line-soft p-4">
             {preview.data ? (
-              <div className="mx-auto bg-white shadow-sm" style={{ width: 'fit-content' }}>
+              <div className="mx-auto bg-paper shadow-sm" style={{ width: 'fit-content' }}>
                 <Invoice doc={preview.data} money={money} />
               </div>
             ) : (
-              <p className="py-12 text-center text-sm text-slate-500">
+              <p className="py-12 text-center text-sm text-muted">
                 {sample.data?.rows?.length === 0
                   ? 'No invoice to preview yet. One appears as soon as Tally has a sale.'
                   : 'Loading a real invoice to preview…'}
               </p>
             )}
           </div>
-          <p className="mt-3 flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2
-                        text-xs text-slate-500">
+          <p className="mt-3 flex items-start gap-2 rounded-lg bg-canvas px-3 py-2
+                        text-xs text-muted">
             <Info size={13} className="mt-0.5 shrink-0" />
             {cfg.data.note} This preview uses a real invoice, so what you see here is
             what prints.
@@ -242,7 +242,7 @@ function Pill({ on, children, onClick, disabled }: {
   return (
     <button onClick={onClick} disabled={disabled}
       className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
-        on ? 'bg-brand-700 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+        on ? 'bg-brand-700 text-white' : 'bg-line-soft text-body hover:bg-line'}`}>
       {children}
     </button>
   );
@@ -255,15 +255,15 @@ function Toggle({ label, hint, on, onChange, disabled }: {
   return (
     <button onClick={() => onChange(!on)} disabled={disabled}
       className="flex w-full items-start gap-2.5 rounded-lg px-1 py-1 text-left
-                 transition hover:bg-slate-50 disabled:opacity-50">
+                 transition hover:bg-canvas disabled:opacity-50">
       <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded
                         border transition ${
-        on ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-300'}`}>
+        on ? 'border-brand-600 bg-brand-600 text-white' : 'border-line'}`}>
         {on && <Check size={11} />}
       </span>
       <span className="min-w-0">
-        <span className="block text-sm text-slate-700">{label}</span>
-        {hint && <span className="block text-[11px] text-slate-400">{hint}</span>}
+        <span className="block text-sm text-body">{label}</span>
+        {hint && <span className="block text-[11px] text-faint">{hint}</span>}
       </span>
     </button>
   );
@@ -277,12 +277,12 @@ function Field({ label, value, placeholder, hint, onSave }: {
   const [v, setV] = useState(value);
   return (
     <div className="mb-3">
-      <label className="text-xs font-semibold text-slate-600">{label}</label>
+      <label className="text-xs font-semibold text-body">{label}</label>
       <input value={v} onChange={(e) => setV(e.target.value)} placeholder={placeholder}
         onBlur={() => { if (v !== value) onSave(v); }}
         className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm
                    outline-none focus:border-brand-500" />
-      {hint && <p className="mt-1 text-[11px] text-slate-400">{hint}</p>}
+      {hint && <p className="mt-1 text-[11px] text-faint">{hint}</p>}
     </div>
   );
 }
@@ -294,7 +294,7 @@ function TextArea({ label, value, rows, placeholder, onSave }: {
   const [v, setV] = useState(value);
   return (
     <div className="mb-3">
-      <label className="text-xs font-semibold text-slate-600">{label}</label>
+      <label className="text-xs font-semibold text-body">{label}</label>
       <textarea value={v} onChange={(e) => setV(e.target.value)} rows={rows}
         placeholder={placeholder}
         onBlur={() => { if (v !== value) onSave(v); }}

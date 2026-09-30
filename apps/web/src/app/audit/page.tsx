@@ -61,7 +61,7 @@ export default function AuditPage() {
 
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <div className="relative min-w-[220px] flex-1">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
           <input value={q} onChange={(e) => setQ(e.target.value)}
             placeholder="A person, or what they changed"
             className="w-full rounded-lg border border-line py-2 pl-9 pr-3 text-sm
@@ -76,7 +76,7 @@ export default function AuditPage() {
         </select>
         <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
           className="rounded-lg border border-line px-3 py-2 text-sm" />
-        <span className="text-sm text-slate-400">to</span>
+        <span className="text-sm text-faint">to</span>
         <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
           className="rounded-lg border border-line px-3 py-2 text-sm" />
       </div>
@@ -91,7 +91,7 @@ export default function AuditPage() {
               <table className="w-full min-w-[720px] text-sm">
                 <thead>
                   <tr className="border-b border-line text-left text-xs uppercase
-                                 tracking-wide text-slate-400">
+                                 tracking-wide text-faint">
                     <th className="pb-2 pr-3 font-semibold">When</th>
                     <th className="pb-2 pr-3 font-semibold">Who</th>
                     <th className="pb-2 pr-3 font-semibold">Did what</th>
@@ -104,40 +104,40 @@ export default function AuditPage() {
                     <Fragment key={e.id}>
                       <tr
                         onClick={() => setOpen(open === e.id ? null : e.id)}
-                        className="cursor-pointer border-b border-slate-50 last:border-0
-                                   hover:bg-slate-50">
-                        <td className="whitespace-nowrap py-2.5 pr-3 text-slate-500">
+                        className="cursor-pointer border-b border-line-soft last:border-0
+                                   hover:bg-canvas">
+                        <td className="whitespace-nowrap py-2.5 pr-3 text-muted">
                           {ago(e.at)}
                         </td>
                         <td className="py-2.5 pr-3">
-                          <div className="font-medium text-slate-800">{e.by}</div>
+                          <div className="font-medium text-ink">{e.by}</div>
                           {e.byEmail && (
-                            <div className="text-[11px] text-slate-400">{e.byEmail}</div>
+                            <div className="text-[11px] text-faint">{e.byEmail}</div>
                           )}
                         </td>
                         <td className="py-2.5 pr-3">
                           <div className="flex items-center gap-1.5">
                             {e.changes ? (
                               open === e.id
-                                ? <ChevronDown size={13} className="text-slate-400" />
-                                : <ChevronRight size={13} className="text-slate-400" />
+                                ? <ChevronDown size={13} className="text-faint" />
+                                : <ChevronRight size={13} className="text-faint" />
                             ) : <span className="w-[13px]" />}
-                            <span className="text-slate-700">{e.label}</span>
+                            <span className="text-body">{e.label}</span>
                           </div>
                           {e.changes && (
-                            <div className="ml-[19px] truncate text-[11px] text-slate-400">
+                            <div className="ml-[19px] truncate text-[11px] text-faint">
                               {e.changes}
                             </div>
                           )}
                         </td>
-                        <td className="py-2.5 pr-3 text-slate-600">
+                        <td className="py-2.5 pr-3 text-body">
                           {e.entityName || '—'}
                           {e.companyName && (
-                            <div className="text-[11px] text-slate-400">{e.companyName}</div>
+                            <div className="text-[11px] text-faint">{e.companyName}</div>
                           )}
                         </td>
                         <td className="py-2.5">
-                          <div className="flex flex-col gap-0.5 text-[11px] text-slate-400">
+                          <div className="flex flex-col gap-0.5 text-[11px] text-faint">
                             {e.ipPrefix && (
                               <span className="inline-flex items-center gap-1">
                                 <Globe size={10} />{e.ipPrefix}
@@ -153,22 +153,22 @@ export default function AuditPage() {
                       </tr>
 
                       {open === e.id && (e.before || e.after) && (
-                        <tr className="border-b border-slate-50">
-                          <td colSpan={5} className="bg-slate-50 px-4 py-3">
+                        <tr className="border-b border-line-soft">
+                          <td colSpan={5} className="bg-canvas px-4 py-3">
                             <div className="grid gap-4 sm:grid-cols-2">
                               <div>
                                 <div className="mb-1 text-[10px] font-bold uppercase
-                                                tracking-wide text-slate-400">Was</div>
-                                <pre className="overflow-x-auto rounded bg-white p-2
-                                                text-[11px] text-slate-600">
+                                                tracking-wide text-faint">Was</div>
+                                <pre className="overflow-x-auto rounded bg-canvas p-2
+                                                text-[11px] text-body">
 {JSON.stringify(e.before ?? {}, null, 2)}
                                 </pre>
                               </div>
                               <div>
                                 <div className="mb-1 text-[10px] font-bold uppercase
-                                                tracking-wide text-slate-400">Became</div>
-                                <pre className="overflow-x-auto rounded bg-white p-2
-                                                text-[11px] text-slate-600">
+                                                tracking-wide text-faint">Became</div>
+                                <pre className="overflow-x-auto rounded bg-canvas p-2
+                                                text-[11px] text-body">
 {JSON.stringify(e.after ?? {}, null, 2)}
                                 </pre>
                               </div>
@@ -184,8 +184,8 @@ export default function AuditPage() {
           </Card>
         )}
 
-      <p className="mt-5 flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2
-                    text-xs text-slate-500">
+      <p className="mt-5 flex items-start gap-2 rounded-lg bg-canvas px-3 py-2
+                    text-xs text-muted">
         <Info size={13} className="mt-0.5 shrink-0" />
         {log.data?.note} Network addresses are kept only to the nearest /24 —
         enough to tell your usual connection from an unfamiliar one, and no more.

@@ -200,7 +200,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       <aside className={`flex flex-col p-6 text-white md:overflow-y-auto ${
         isAdminArea
           ? 'bg-gradient-to-b from-ink to-body'
-          : 'bg-gradient-to-b from-brand-800 to-brand-600'}`}>
+          : 'bg-gradient-to-b from-sidebar-from to-sidebar-to'}`}>
         <div className="mb-1 flex items-center gap-2.5">
           <span className={`grid h-8 w-8 place-items-center rounded-lg bg-white text-lg font-extrabold ${
             isAdminArea ? 'text-ink' : 'text-brand-700'}`}>M</span>

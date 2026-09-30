@@ -30,7 +30,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="grid min-h-screen place-items-center bg-gradient-to-br from-brand-800 to-brand-600 p-6">
-      <div className="w-full max-w-md rounded-2xl bg-white p-7 shadow-xl">
+      <div className="w-full max-w-md rounded-2xl bg-surface p-7 shadow-xl">
         <div className="mb-1 flex items-center gap-2.5">
           <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-700 text-lg font-extrabold text-white">M</span>
           <span className="text-xl font-bold tracking-tight">Munim</span>
@@ -61,7 +61,7 @@ export default function OnboardingPage() {
           className="w-full rounded-xl border-2 border-line px-3 py-3 text-base outline-none focus:border-brand-600"
         />
 
-        {err ? <p className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-800">{err}</p> : null}
+        {err ? <p className="mt-4 rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative">{err}</p> : null}
 
         <Button onClick={create} disabled={busy || businessName.trim().length < 2}
           className="mt-6 w-full">

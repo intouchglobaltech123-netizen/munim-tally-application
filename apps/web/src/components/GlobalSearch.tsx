@@ -108,20 +108,20 @@ export default function GlobalSearch() {
   return (
     <>
       <button onClick={() => { setOpen(true); setTimeout(() => input.current?.focus(), 10); }}
-        className="flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-1.5
-                   text-sm text-slate-400 transition hover:border-slate-300">
+        className="flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5
+                   text-sm text-faint transition hover:border-line">
         <Search size={15} />
         <span className="hidden sm:inline">Search</span>
-        <kbd className="ml-2 hidden rounded bg-slate-100 px-1.5 py-0.5 text-[10px]
-                        font-semibold text-slate-500 sm:inline">Ctrl K</kbd>
+        <kbd className="ml-2 hidden rounded bg-line-soft px-1.5 py-0.5 text-[10px]
+                        font-semibold text-muted sm:inline">Ctrl K</kbd>
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/40 p-4 sm:pt-24"
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-ink/40 p-4 sm:pt-24"
           onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
-          <div className="w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-2xl">
+          <div className="w-full max-w-2xl overflow-hidden rounded-xl bg-surface shadow-2xl">
             <div className="flex items-center gap-2 border-b border-line px-4">
-              <Search size={17} className="shrink-0 text-slate-400" />
+              <Search size={17} className="shrink-0 text-faint" />
               <input ref={input} value={term} onChange={(e) => setTerm(e.target.value)}
                 placeholder="A customer, an item, an invoice number, a GSTIN…"
                 onKeyDown={(e) => {
@@ -129,27 +129,27 @@ export default function GlobalSearch() {
                   if (e.key === 'ArrowUp') { e.preventDefault(); setCursor((c) => Math.max(c - 1, 0)); }
                   if (e.key === 'Enter' && flat[cursor]) go(flat[cursor]);
                 }}
-                className="flex-1 py-3.5 text-sm outline-none placeholder:text-slate-400" />
+                className="flex-1 py-3.5 text-sm outline-none placeholder:text-faint" />
               <button onClick={() => setShowFilters(!showFilters)}
                 aria-label="Filters"
                 className={`rounded p-1.5 transition ${
-                  filtered ? 'bg-amber-100 text-amber-700' : 'text-slate-400 hover:bg-slate-100'}`}>
+                  filtered ? 'bg-warn-soft text-warn' : 'text-faint hover:bg-line-soft'}`}>
                 <SlidersHorizontal size={15} />
               </button>
               <button onClick={() => setOpen(false)} aria-label="Close"
-                className="rounded p-1.5 text-slate-400 hover:bg-slate-100">
+                className="rounded p-1.5 text-faint hover:bg-line-soft">
                 <X size={15} />
               </button>
             </div>
 
             {showFilters && (
-              <div className="border-b border-line bg-slate-50 p-3">
+              <div className="border-b border-line bg-canvas p-3">
                 <div className="flex flex-wrap gap-1.5">
                   {(opts.data?.kinds ?? []).map((k) => (
                     <button key={k.key} onClick={() => setKind(k.key)}
                       className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
                         kind === k.key ? 'bg-brand-700 text-white'
-                          : 'bg-white text-slate-600 ring-1 ring-line hover:bg-slate-100'}`}>
+                          : 'bg-surface text-body ring-1 ring-line hover:bg-line-soft'}`}>
                       {k.label}
                     </button>
                   ))}
@@ -160,7 +160,7 @@ export default function GlobalSearch() {
                     className="w-40 rounded-lg border border-line px-2.5 py-1.5 text-xs" />
                   <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
                     className="rounded-lg border border-line px-2.5 py-1.5 text-xs" />
-                  <span className="text-xs text-slate-400">to</span>
+                  <span className="text-xs text-faint">to</span>
                   <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
                     className="rounded-lg border border-line px-2.5 py-1.5 text-xs" />
                   <select value={type} onChange={(e) => setType(e.target.value)}
@@ -172,7 +172,7 @@ export default function GlobalSearch() {
                   </select>
                   {filtered && (
                     <button onClick={() => { setKind(''); setAmount(''); setFrom(''); setTo(''); setType(''); }}
-                      className="text-xs font-semibold text-rose-600">Clear</button>
+                      className="text-xs font-semibold text-negative">Clear</button>
                   )}
                 </div>
               </div>
@@ -180,20 +180,20 @@ export default function GlobalSearch() {
 
             <div className="max-h-[60vh] overflow-auto">
               {!hasQuery ? (
-                <p className="px-4 py-10 text-center text-sm text-slate-400">
+                <p className="px-4 py-10 text-center text-sm text-faint">
                   Type a name, a number, a GSTIN or a phone number.
                 </p>
               ) : results.loading && !results.data ? (
-                <p className="px-4 py-10 text-center text-sm text-slate-400">Looking…</p>
+                <p className="px-4 py-10 text-center text-sm text-faint">Looking…</p>
               ) : results.data?.total === 0 ? (
-                <p className="px-4 py-10 text-center text-sm text-slate-400">
+                <p className="px-4 py-10 text-center text-sm text-faint">
                   {results.data.hint}
                 </p>
               ) : (
                 (results.data?.groups ?? []).map((g) => (
                   <div key={g.kind}>
-                    <div className="sticky top-0 bg-slate-50 px-4 py-1.5 text-[11px]
-                                    font-bold uppercase tracking-wide text-slate-500">
+                    <div className="sticky top-0 bg-canvas px-4 py-1.5 text-[11px]
+                                    font-bold uppercase tracking-wide text-muted">
                       {g.label}
                     </div>
                     {g.results.map((r) => {
@@ -203,19 +203,19 @@ export default function GlobalSearch() {
                         <button key={`${g.kind}-${r.title}`} onClick={() => go(r)}
                           onMouseEnter={() => setCursor(idx)}
                           className={`flex w-full items-center gap-3 px-4 py-2.5 text-left
-                                      transition ${idx === cursor ? 'bg-brand-50' : 'hover:bg-slate-50'}`}>
-                          <I size={15} className="shrink-0 text-slate-400" />
+                                      transition ${idx === cursor ? 'bg-brand-50' : 'hover:bg-canvas'}`}>
+                          <I size={15} className="shrink-0 text-faint" />
                           <div className="min-w-0 flex-1">
-                            <div className="truncate text-sm font-medium text-slate-800">{r.title}</div>
+                            <div className="truncate text-sm font-medium text-ink">{r.title}</div>
                             {r.subtitle && (
-                              <div className="truncate text-xs text-slate-500">{r.subtitle}</div>
+                              <div className="truncate text-xs text-muted">{r.subtitle}</div>
                             )}
                           </div>
-                          <div className="shrink-0 text-sm font-semibold tabular-nums text-slate-700">
+                          <div className="shrink-0 text-sm font-semibold tabular-nums text-body">
                             {money(Math.abs(r.amountPaise))}
                           </div>
                           {idx === cursor && (
-                            <CornerDownLeft size={13} className="shrink-0 text-slate-400" />
+                            <CornerDownLeft size={13} className="shrink-0 text-faint" />
                           )}
                         </button>
                       );

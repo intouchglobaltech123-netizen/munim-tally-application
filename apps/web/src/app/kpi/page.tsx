@@ -139,8 +139,8 @@ export default function KpiPage() {
           sub="of all buying" />
       </div>
       {p.concentration?.warning && (
-        <Card className="mb-6 border-amber-200 bg-amber-50">
-          <div className="flex items-start gap-2 text-sm text-amber-900">
+        <Card className="mb-6 border-warn/40 bg-warn-soft">
+          <div className="flex items-start gap-2 text-sm text-warn">
             <AlertTriangle size={15} className="mt-0.5 shrink-0" />
             <span>{p.concentration.warning} If they raise prices or close, there is
               no second source in your books.</span>
@@ -206,18 +206,18 @@ function Kpi({ label, value, sub, delta, warn }: {
   label: string; value: string; sub?: string; delta?: number | null; warn?: boolean;
 }) {
   return (
-    <Card className={warn ? 'border-amber-200' : ''}>
+    <Card className={warn ? 'border-warn/40' : ''}>
       <div className="text-[11px] font-semibold uppercase tracking-wide text-muted">
         {label}
       </div>
       <div className={`figure mt-1.5 text-[26px] font-bold leading-none ${
-        warn ? 'text-amber-700' : ''}`}>
+        warn ? 'text-warn' : ''}`}>
         {value}
       </div>
       <div className="mt-1.5 flex items-center gap-2">
         {delta !== undefined && delta !== null && (
           <span className={`inline-flex items-center gap-0.5 text-xs font-semibold ${
-            delta >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+            delta >= 0 ? 'text-positive' : 'text-negative'}`}>
             {delta >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
             {Math.abs(delta)}%
           </span>
@@ -243,7 +243,7 @@ function Ranked({ rows }: {
           </div>
           <div className="mt-0.5 flex items-center gap-2">
             {r.share > 0 && (
-              <div className="h-1 flex-1 overflow-hidden rounded-full bg-slate-100">
+              <div className="h-1 flex-1 overflow-hidden rounded-full bg-line-soft">
                 <div className="h-full rounded-full bg-brand-500"
                   style={{ width: `${Math.max(2, (r.share / top) * 100)}%` }} />
               </div>
@@ -259,8 +259,8 @@ function Ranked({ rows }: {
 /** A caveat that belongs next to the number, not in a footnote nobody reads. */
 function Note({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-6 flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2
-                  text-xs text-slate-500">
+    <p className="mb-6 flex items-start gap-2 rounded-lg bg-canvas px-3 py-2
+                  text-xs text-muted">
       <Info size={13} className="mt-0.5 shrink-0" />
       <span>{children}</span>
     </p>

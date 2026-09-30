@@ -78,12 +78,12 @@ export default function UsersPage() {
       />
 
       {err && (
-        <div className="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700 ring-1 ring-rose-200">
+        <div className="mb-4 rounded-lg bg-negative-soft px-4 py-3 text-sm text-negative ring-1 ring-negative/30">
           {err}
         </div>
       )}
       {said && (
-        <div className="mb-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800 ring-1 ring-emerald-200">
+        <div className="mb-4 rounded-lg bg-positive-soft px-4 py-3 text-sm text-positive ring-1 ring-positive/30">
           {said}
         </div>
       )}
@@ -93,20 +93,20 @@ export default function UsersPage() {
           <SectionTitle icon={Mail}>Invite by Google address</SectionTitle>
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
-              <label className="text-xs font-semibold text-slate-600">Google email</label>
+              <label className="text-xs font-semibold text-body">Google email</label>
               <input value={email} onChange={(e) => setEmail(e.target.value)}
                 placeholder="accountant@gmail.com" type="email"
                 className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm
                            outline-none focus:border-brand-500" />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-600">Name (optional)</label>
+              <label className="text-xs font-semibold text-body">Name (optional)</label>
               <input value={name} onChange={(e) => setName(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm
                            outline-none focus:border-brand-500" />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-600">Role</label>
+              <label className="text-xs font-semibold text-body">Role</label>
               <select value={roleKey} onChange={(e) => setRoleKey(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm
                            outline-none focus:border-brand-500">
@@ -117,7 +117,7 @@ export default function UsersPage() {
             </div>
           </div>
           {rolesById.get(roleKey) && (
-            <p className="mt-2 text-xs text-slate-500">{rolesById.get(roleKey)!.description}</p>
+            <p className="mt-2 text-xs text-muted">{rolesById.get(roleKey)!.description}</p>
           )}
           <div className="mt-4 flex gap-2">
             <Button icon={UserPlus} onClick={doInvite} disabled={busy === 'invite' || !email}>
@@ -154,13 +154,13 @@ export default function UsersPage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-slate-800">{i.name || i.email}</span>
+                  <span className="font-semibold text-ink">{i.name || i.email}</span>
                   <Badge tone="warn">Invited</Badge>
                 </div>
-                <div className="mt-0.5 text-xs text-slate-500">
+                <div className="mt-0.5 text-xs text-muted">
                   {i.email} · {i.roleName} · invited {ago(i.invitedAt)}
                 </div>
-                <div className="mt-1 text-xs text-slate-400">
+                <div className="mt-1 text-xs text-faint">
                   Waiting for them to sign in with Google.
                 </div>
               </div>
@@ -208,18 +208,18 @@ function PersonCard({ u, roles, canManage, busy, isSelf, onRole, onStatus, onDel
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold text-slate-900">{u.name || u.email}</span>
+            <span className="font-semibold text-ink">{u.name || u.email}</span>
             {isSelf && <Badge tone="ok">You</Badge>}
             {isOwner && <Badge tone="ok">Owner</Badge>}
             {disabled && <Badge tone="bad">Disabled</Badge>}
             {u.isSalesperson && <Badge tone="warn">Salesperson</Badge>}
           </div>
-          <div className="mt-0.5 text-xs text-slate-500">
+          <div className="mt-0.5 text-xs text-muted">
             {u.email}
             {u.branch && ` · ${u.branch}`}
             {u.lastSeenAt ? ` · seen ${ago(u.lastSeenAt)}` : ' · never signed in'}
           </div>
-          <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-400">
+          <div className="mt-1 flex items-center gap-1.5 text-xs text-faint">
             <Smartphone size={12} />
             {u.activeDevices} device{u.activeDevices === 1 ? '' : 's'}
             {u.deviceLimit > 0 && ` (limit ${u.deviceLimit})`}
@@ -256,7 +256,7 @@ function PersonCard({ u, roles, canManage, busy, isSelf, onRole, onStatus, onDel
       </div>
 
       {open && canManage && (
-        <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-3">
+        <div className="mt-4 grid gap-3 border-t border-line-soft pt-4 sm:grid-cols-3">
           <Field label="Branch" value={u.branch}
             onSave={(v) => onField('branch', v)} placeholder="Ranipet" />
           <Field label="Salesperson name in Tally" value={u.salespersonName}
@@ -269,7 +269,7 @@ function PersonCard({ u, roles, canManage, busy, isSelf, onRole, onStatus, onDel
             <Button variant="danger" icon={Trash2} disabled={busy === u.id} onClick={onDelete}>
               Remove from account
             </Button>
-            <span className="ml-2 text-xs text-slate-500">
+            <span className="ml-2 text-xs text-muted">
               Disabling is usually better — it keeps their history.
             </span>
           </div>
@@ -285,7 +285,7 @@ function Field({ label, value, onSave, placeholder }: {
   const [v, setV] = useState(value);
   return (
     <div>
-      <label className="text-xs font-semibold text-slate-600">{label}</label>
+      <label className="text-xs font-semibold text-body">{label}</label>
       <div className="mt-1 flex gap-1.5">
         <input value={v} onChange={(e) => setV(e.target.value)} placeholder={placeholder}
           className="min-w-0 flex-1 rounded-lg border border-line px-2.5 py-1.5 text-sm
@@ -307,10 +307,10 @@ function RoleCard({ r, catalogue, onEdit, canManage }: {
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-900">{r.name}</span>
+            <span className="font-semibold text-ink">{r.name}</span>
             {r.builtIn && <Badge tone="ok">Built in</Badge>}
           </div>
-          <p className="mt-0.5 text-xs text-slate-500">{r.description}</p>
+          <p className="mt-0.5 text-xs text-muted">{r.description}</p>
         </div>
         {canManage && r.key !== 'owner' && (
           <Button variant="ghost" icon={Pencil} onClick={onEdit}>Edit</Button>
@@ -319,14 +319,14 @@ function RoleCard({ r, catalogue, onEdit, canManage }: {
 
       <div className="mt-3 flex flex-wrap gap-1">
         {granted.length === 0 ? (
-          <span className="text-xs text-slate-400">No access to anything yet.</span>
+          <span className="text-xs text-faint">No access to anything yet.</span>
         ) : granted.map((m) => (
-          <span key={m} className="rounded bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
+          <span key={m} className="rounded bg-line-soft px-2 py-0.5 text-[11px] text-body">
             {catalogue.modules[m]?.label ?? m}
           </span>
         ))}
       </div>
-      <p className="mt-2 text-xs text-slate-400">
+      <p className="mt-2 text-xs text-faint">
         {r.users} {r.users === 1 ? 'person' : 'people'}
       </p>
     </Card>
@@ -370,27 +370,27 @@ function RoleEditor({ role, catalogue, onClose, onSaved }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-auto
-                    bg-slate-900/40 p-4 sm:p-8">
+                    bg-ink/40 p-4 sm:p-8">
       <Card className="w-full max-w-4xl">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">{role.name}</h2>
-            <p className="text-xs text-slate-500">{role.description}</p>
+            <h2 className="text-lg font-bold text-ink">{role.name}</h2>
+            <p className="text-xs text-muted">{role.description}</p>
           </div>
           <Button variant="ghost" icon={X} onClick={onClose}>Close</Button>
         </div>
 
-        {err && <p className="mt-3 text-sm text-rose-600">{err}</p>}
+        {err && <p className="mt-3 text-sm text-negative">{err}</p>}
 
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="border-b border-line">
                 <th className="pb-2 pr-3 text-left text-xs font-semibold uppercase
-                               tracking-wide text-slate-400">Section</th>
+                               tracking-wide text-faint">Section</th>
                 {Object.entries(catalogue.actions).map(([k, a]) => (
                   <th key={k} title={a.hint}
-                    className="pb-2 px-1.5 text-center text-xs font-semibold text-slate-500">
+                    className="pb-2 px-1.5 text-center text-xs font-semibold text-muted">
                     {a.label}
                   </th>
                 ))}
@@ -398,10 +398,10 @@ function RoleEditor({ role, catalogue, onClose, onSaved }: {
             </thead>
             <tbody>
               {Object.entries(catalogue.modules).map(([mk, m]) => (
-                <tr key={mk} className="border-b border-slate-50 last:border-0">
+                <tr key={mk} className="border-b border-line-soft last:border-0">
                   <td className="py-2 pr-3">
-                    <div className="text-sm font-medium text-slate-800">{m.label}</div>
-                    <div className="text-[11px] text-slate-400">{m.hint}</div>
+                    <div className="text-sm font-medium text-ink">{m.label}</div>
+                    <div className="text-[11px] text-faint">{m.hint}</div>
                   </td>
                   {Object.keys(catalogue.actions).map((ak) => {
                     const on = (perms[mk] ?? []).includes(ak);
@@ -412,7 +412,7 @@ function RoleEditor({ role, catalogue, onClose, onSaved }: {
                           disabled={ak !== 'read' && !canView}
                           className={`h-6 w-6 rounded border transition disabled:opacity-25 ${
                             on ? 'border-brand-600 bg-brand-600 text-white'
-                               : 'border-slate-300 hover:border-brand-400'}`}>
+                               : 'border-line hover:border-brand-400'}`}>
                           {on && <Check size={13} className="mx-auto" />}
                         </button>
                       </td>

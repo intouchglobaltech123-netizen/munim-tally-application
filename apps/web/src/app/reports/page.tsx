@@ -93,8 +93,8 @@ export default function ReportsPage() {
       <div className="mb-6 space-y-3 border-b border-line pb-4">
         {ready && pinned.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="mr-1 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-amber-600">
-              <Star size={12} className="fill-amber-400 text-amber-500" /> Pinned
+            <span className="mr-1 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-warn">
+              <Star size={12} className="fill-warn text-warn" /> Pinned
             </span>
             {pinned.map((r) => (
               <Tab key={r.slug} r={r} active={slug === r.slug} fav
@@ -107,7 +107,7 @@ export default function ReportsPage() {
           if (!inCat.length) return null;
           return (
             <div key={cat} className="flex flex-wrap items-center gap-1.5">
-              <span className="mr-1 w-28 shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              <span className="mr-1 w-28 shrink-0 text-xs font-semibold uppercase tracking-wide text-faint">
                 {cat}
               </span>
               {inCat.map((r) => (
@@ -124,7 +124,7 @@ export default function ReportsPage() {
           {(['month', 'party', 'item'] as const).map((g) => (
             <button key={g} onClick={() => setGroupBy(g)}
               className={`px-4 py-2 text-sm font-semibold capitalize ${
-                groupBy === g ? 'bg-brand-700 text-white' : 'bg-white hover:bg-canvas'}`}>
+                groupBy === g ? 'bg-brand-700 text-white' : 'bg-surface hover:bg-canvas'}`}>
               {g}
             </button>
           ))}
@@ -136,7 +136,7 @@ export default function ReportsPage() {
           {[30, 60, 90, 180].map((d) => (
             <button key={d} onClick={() => setDays(d)}
               className={`px-4 py-2 text-sm font-semibold ${
-                days === d ? 'bg-brand-700 text-white' : 'bg-white hover:bg-canvas'}`}>
+                days === d ? 'bg-brand-700 text-white' : 'bg-surface hover:bg-canvas'}`}>
               {d} days
             </button>
           ))}
@@ -230,7 +230,7 @@ function CashBookView({ d }: { d: CashBookData }) {
           <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="border-b border-line text-left text-xs uppercase
-                             tracking-wide text-slate-400">
+                             tracking-wide text-faint">
                 <th className="pb-2 pr-3 font-semibold">Date</th>
                 <th className="pb-2 pr-3 font-semibold">Particulars</th>
                 <th className="pb-2 pr-3 font-semibold">Voucher</th>
@@ -240,30 +240,30 @@ function CashBookView({ d }: { d: CashBookData }) {
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b border-slate-100 bg-slate-50">
-                <td className="py-2 pr-3 text-xs text-slate-500" colSpan={5}>Opening balance</td>
+              <tr className="border-b border-line-soft bg-canvas">
+                <td className="py-2 pr-3 text-xs text-muted" colSpan={5}>Opening balance</td>
                 <td className="py-2 text-right tabular-nums font-semibold">
                   {money(d.openingPaise)}
                 </td>
               </tr>
               {list(d.rows).map((r) => (
-                <tr key={r.id + r.account} className="border-b border-slate-50 last:border-0">
-                  <td className="py-2 pr-3 whitespace-nowrap text-slate-500">
+                <tr key={r.id + r.account} className="border-b border-line-soft last:border-0">
+                  <td className="py-2 pr-3 whitespace-nowrap text-muted">
                     {shortDate(r.date)}
                   </td>
                   <td className="py-2 pr-3">
-                    <div className="text-slate-800">{r.contra || '—'}</div>
+                    <div className="text-ink">{r.contra || '—'}</div>
                     {r.narration && (
-                      <div className="text-[11px] text-slate-400">{r.narration}</div>
+                      <div className="text-[11px] text-faint">{r.narration}</div>
                     )}
                   </td>
-                  <td className="py-2 pr-3 text-xs text-slate-500">
+                  <td className="py-2 pr-3 text-xs text-muted">
                     {r.type} {r.no}
                   </td>
-                  <td className="py-2 pr-3 text-right tabular-nums text-emerald-700">
+                  <td className="py-2 pr-3 text-right tabular-nums text-positive">
                     {r.inPaise ? money(r.inPaise) : ''}
                   </td>
-                  <td className="py-2 pr-3 text-right tabular-nums text-rose-700">
+                  <td className="py-2 pr-3 text-right tabular-nums text-negative">
                     {r.outPaise ? money(r.outPaise) : ''}
                   </td>
                   <td className="py-2 text-right tabular-nums font-semibold">
@@ -295,13 +295,13 @@ function GroupSummaryView({ d }: { d: GroupSummaryData }) {
   return (
     <>
       {d.note && (
-        <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">{d.note}</p>
+        <p className="mb-4 rounded-lg bg-warn-soft px-3 py-2 text-xs text-warn">{d.note}</p>
       )}
       <Card>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs uppercase
-                           tracking-wide text-slate-400">
+                           tracking-wide text-faint">
               <th className="pb-2 pr-3 font-semibold">Group</th>
               <th className="pb-2 pr-3 text-right font-semibold">Ledgers</th>
               <th className="pb-2 text-right font-semibold">Balance</th>
@@ -322,22 +322,22 @@ function GroupRows({ g, depth, money }: {
 }): React.ReactElement {
   return (
     <>
-      <tr className="border-b border-slate-50">
+      <tr className="border-b border-line-soft">
         <td className="py-1.5 pr-3" style={{ paddingLeft: depth * 18 }}>
-          <span className={depth === 0 ? 'font-semibold text-slate-900' : 'text-slate-700'}>
+          <span className={depth === 0 ? 'font-semibold text-ink' : 'text-body'}>
             {g.name}
           </span>
           {g.orphan && (
-            <span className="ml-2 rounded bg-amber-100 px-1.5 text-[10px] text-amber-800">
+            <span className="ml-2 rounded bg-warn-soft px-1.5 text-[10px] text-warn">
               not in the group tree
             </span>
           )}
         </td>
-        <td className="py-1.5 pr-3 text-right tabular-nums text-slate-500">
+        <td className="py-1.5 pr-3 text-right tabular-nums text-muted">
           {g.totalLedgers || ''}
         </td>
         <td className={`py-1.5 text-right tabular-nums ${
-          depth === 0 ? 'font-bold text-slate-900' : 'text-slate-700'}`}>
+          depth === 0 ? 'font-bold text-ink' : 'text-body'}`}>
           {money(g.totalBalancePaise)}
         </td>
       </tr>
@@ -366,7 +366,7 @@ function RegisterView({ d }: { d: RegisterData }) {
         <table className="w-full min-w-[860px] text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs uppercase
-                           tracking-wide text-slate-400">
+                           tracking-wide text-faint">
               <th className="pb-2 pr-3 font-semibold">Date</th>
               <th className="pb-2 pr-3 font-semibold">No.</th>
               <th className="pb-2 pr-3 font-semibold">Party</th>
@@ -379,23 +379,23 @@ function RegisterView({ d }: { d: RegisterData }) {
           </thead>
           <tbody>
             {list(d.rows).map((r) => (
-              <tr key={r.id} className={`border-b border-slate-50 last:border-0 ${
-                r.isReturn ? 'text-rose-700' : ''}`}>
-                <td className="py-2 pr-3 whitespace-nowrap text-slate-500">{shortDate(r.date)}</td>
+              <tr key={r.id} className={`border-b border-line-soft last:border-0 ${
+                r.isReturn ? 'text-negative' : ''}`}>
+                <td className="py-2 pr-3 whitespace-nowrap text-muted">{shortDate(r.date)}</td>
                 <td className="py-2 pr-3">{r.no}</td>
                 <td className="py-2 pr-3">
-                  <div className="text-slate-800">{r.party || '—'}</div>
-                  {r.gstin && <div className="font-mono text-[11px] text-slate-400">{r.gstin}</div>}
+                  <div className="text-ink">{r.party || '—'}</div>
+                  {r.gstin && <div className="font-mono text-[11px] text-faint">{r.gstin}</div>}
                   {r.isReturn && <span className="text-[11px]">return</span>}
                 </td>
                 <td className="py-2 pr-3 text-right tabular-nums">{money(r.taxablePaise)}</td>
-                <td className="py-2 pr-3 text-right tabular-nums text-slate-500">
+                <td className="py-2 pr-3 text-right tabular-nums text-muted">
                   {r.cgstPaise ? money(r.cgstPaise) : ''}
                 </td>
-                <td className="py-2 pr-3 text-right tabular-nums text-slate-500">
+                <td className="py-2 pr-3 text-right tabular-nums text-muted">
                   {r.sgstPaise ? money(r.sgstPaise) : ''}
                 </td>
-                <td className="py-2 pr-3 text-right tabular-nums text-slate-500">
+                <td className="py-2 pr-3 text-right tabular-nums text-muted">
                   {r.igstPaise ? money(r.igstPaise) : ''}
                 </td>
                 <td className="py-2 text-right tabular-nums font-semibold">
@@ -403,7 +403,7 @@ function RegisterView({ d }: { d: RegisterData }) {
                 </td>
               </tr>
             ))}
-            <tr className="border-t-2 border-slate-800 font-bold">
+            <tr className="border-t-2 border-ink font-bold">
               <td className="py-2 pr-3" colSpan={3}>{d.totals.count} entries</td>
               <td className="py-2 pr-3 text-right tabular-nums">{money(d.totals.taxablePaise)}</td>
               <td className="py-2 pr-3 text-right tabular-nums">{money(d.totals.cgstPaise)}</td>
@@ -455,14 +455,14 @@ function DueSoonView({ d }: { d: DueSoonData }) {
             <table className="w-full text-sm">
               <tbody>
                 {list(d.groups[b.key]).map((x) => (
-                  <tr key={x.ref + x.party} className="border-b border-slate-50 last:border-0">
+                  <tr key={x.ref + x.party} className="border-b border-line-soft last:border-0">
                     <td className="py-2 pr-3">
-                      <div className="font-medium text-slate-800">{x.party}</div>
-                      <div className="text-[11px] text-slate-400">
+                      <div className="font-medium text-ink">{x.party}</div>
+                      <div className="text-[11px] text-faint">
                         {x.ref} · due {shortDate(x.dueDate)}
                       </div>
                     </td>
-                    <td className="py-2 pr-3 text-xs text-slate-500">
+                    <td className="py-2 pr-3 text-xs text-muted">
                       {/* The point of the report is to ring them. */}
                       {x.phone || 'no phone on file'}
                     </td>
@@ -507,7 +507,7 @@ function ExpiryView({ d }: { d: ExpiryData }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs uppercase
-                           tracking-wide text-slate-400">
+                           tracking-wide text-faint">
               <th className="pb-2 pr-3 font-semibold">Item</th>
               <th className="pb-2 pr-3 font-semibold">Batch</th>
               <th className="pb-2 pr-3 text-right font-semibold">Qty</th>
@@ -517,11 +517,11 @@ function ExpiryView({ d }: { d: ExpiryData }) {
           </thead>
           <tbody>
             {list(d.rows).map((r) => (
-              <tr key={r.item + r.batch + r.godown} className="border-b border-slate-50 last:border-0">
-                <td className="py-2 pr-3 text-slate-800">{r.item}</td>
-                <td className="py-2 pr-3 text-slate-600">
+              <tr key={r.item + r.batch + r.godown} className="border-b border-line-soft last:border-0">
+                <td className="py-2 pr-3 text-ink">{r.item}</td>
+                <td className="py-2 pr-3 text-body">
                   {r.batch}
-                  {r.godown && <span className="text-[11px] text-slate-400"> · {r.godown}</span>}
+                  {r.godown && <span className="text-[11px] text-faint"> · {r.godown}</span>}
                 </td>
                 <td className="py-2 pr-3 text-right tabular-nums">{r.qty}</td>
                 <td className="py-2 pr-3 text-right tabular-nums">{money(r.valuePaise)}</td>
@@ -545,11 +545,11 @@ function Stat({ label, value, sub, tone }: {
 }) {
   return (
     <Card>
-      <div className="text-xs font-medium text-slate-500">{label}</div>
+      <div className="text-xs font-medium text-muted">{label}</div>
       <div className={`mt-1 text-lg font-bold tabular-nums ${
-        tone === 'good' ? 'text-emerald-700' : tone === 'bad' ? 'text-rose-700'
-          : tone === 'warn' ? 'text-amber-600' : 'text-slate-900'}`}>{value}</div>
-      {sub && <div className="text-[11px] text-slate-400">{sub}</div>}
+        tone === 'good' ? 'text-positive' : tone === 'bad' ? 'text-negative'
+          : tone === 'warn' ? 'text-warn' : 'text-ink'}`}>{value}</div>
+      {sub && <div className="text-[11px] text-faint">{sub}</div>}
     </Card>
   );
 }
@@ -682,7 +682,7 @@ function PnlView({ d }: { d: Pnl }) {
               {profit >= 0 ? 'Net profit' : 'Net loss'}
             </div>
             <div className={`text-3xl font-bold tabular-nums ${
-              profit >= 0 ? 'text-brand-700' : 'text-rose-700'}`}>
+              profit >= 0 ? 'text-brand-700' : 'text-negative'}`}>
               {inr(Math.abs(profit))}
             </div>
           </div>
@@ -915,9 +915,9 @@ function Tab({ r, active, fav, onPick, onToggle }: {
         aria-label={fav ? `Unpin ${r.label}` : `Pin ${r.label}`}
         className="py-1.5 pl-0.5 pr-2">
         <Star size={13}
-          className={fav ? 'fill-amber-400 text-amber-500'
+          className={fav ? 'fill-warn text-warn'
             : active ? 'text-white/50 hover:text-white'
-                     : 'text-slate-300 opacity-0 transition group-hover:opacity-100 hover:text-amber-500'} />
+                     : 'text-faint opacity-0 transition group-hover:opacity-100 hover:text-warn'} />
       </button>
     </span>
   );

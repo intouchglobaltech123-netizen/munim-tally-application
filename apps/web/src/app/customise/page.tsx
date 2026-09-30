@@ -119,13 +119,13 @@ export default function CustomisePage() {
         } />
 
       {said && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2
-                        text-sm text-emerald-800">
+        <div className="mb-4 flex items-center gap-2 rounded-lg bg-positive-soft px-3 py-2
+                        text-sm text-positive">
           <CheckCircle2 size={15} /> {said}
         </div>
       )}
       {err && (
-        <div className="mb-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-800">{err}</div>
+        <div className="mb-4 rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative">{err}</div>
       )}
 
       <SectionTitle icon={LayoutGrid} note="drag-free: use the arrows">
@@ -136,24 +136,24 @@ export default function CustomisePage() {
           const off = hidden.includes(key);
           return (
             <div key={key}
-              className={`flex items-center gap-3 border-b border-slate-50 py-2.5
+              className={`flex items-center gap-3 border-b border-line-soft py-2.5
                           last:border-0 ${off ? 'opacity-50' : ''}`}>
-              <span className="w-6 text-xs font-semibold text-slate-400">{i + 1}</span>
+              <span className="w-6 text-xs font-semibold text-faint">{i + 1}</span>
               <div className="flex-1">
                 <div className="text-sm font-medium text-ink">{labelFor(key)}</div>
                 <div className="text-xs text-muted">{hintFor(key)}</div>
               </div>
               <button onClick={() => toggle(key)} title={off ? 'Show' : 'Hide'}
-                className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100">
+                className="rounded-lg p-1.5 text-muted hover:bg-line-soft">
                 {off ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
               <button onClick={() => move(key, -1)} disabled={i === 0}
-                className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100
+                className="rounded-lg p-1.5 text-muted hover:bg-line-soft
                            disabled:opacity-25">
                 <ArrowUp size={15} />
               </button>
               <button onClick={() => move(key, 1)} disabled={i === order.length - 1}
-                className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100
+                className="rounded-lg p-1.5 text-muted hover:bg-line-soft
                            disabled:opacity-25">
                 <ArrowDown size={15} />
               </button>
@@ -197,8 +197,8 @@ export default function CustomisePage() {
         </Field>
       </Card>
 
-      <p className="flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs
-                    text-slate-500">
+      <p className="flex items-start gap-2 rounded-lg bg-canvas px-3 py-2 text-xs
+                    text-muted">
         <Info size={13} className="mt-0.5 shrink-0" />
         {prefs.data.note} A section you have no permission for is never sent to your
         browser at all, whatever you set here.
@@ -212,7 +212,7 @@ function Field({ label, hint, children }: {
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-b
-                    border-slate-50 py-3 last:border-0">
+                    border-line-soft py-3 last:border-0">
       <div>
         <div className="text-sm font-medium text-ink">{label}</div>
         <div className="text-xs text-muted">{hint}</div>

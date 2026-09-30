@@ -80,23 +80,23 @@ export default function ReportToolbar<T>({
         {/* Saved views */}
         {views.data && views.data.views.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5">
-            <Bookmark size={14} className="text-slate-400" />
+            <Bookmark size={14} className="text-faint" />
             {views.data.views.map((v) => (
               <span key={v.id} className="group inline-flex items-center rounded-lg
-                                          bg-slate-100 transition hover:bg-slate-200">
+                                          bg-line-soft transition hover:bg-line">
                 <button onClick={() => { onConfig(v.config); setApplied(v.id); }}
                   title={v.mine ? 'Your view' : `Shared by ${v.owner}`}
                   className={`py-1.5 pl-2.5 pr-1 text-xs font-semibold ${
-                    applied === v.id ? 'text-brand-700' : 'text-slate-600'}`}>
-                  {v.isDefault && <Star size={10} className="mr-1 inline fill-amber-400 text-amber-500" />}
-                  {!v.mine && <Users size={10} className="mr-1 inline text-slate-400" />}
+                    applied === v.id ? 'text-brand-700' : 'text-body'}`}>
+                  {v.isDefault && <Star size={10} className="mr-1 inline fill-warn text-warn" />}
+                  {!v.mine && <Users size={10} className="mr-1 inline text-faint" />}
                   {v.name}
                 </button>
                 {v.mine && (
                   <button onClick={async () => { await del(`/v1/views/${v.id}`); views.reload(); }}
                     title="Delete this view" className="py-1.5 pl-0.5 pr-2">
-                    <X size={11} className="text-slate-400 opacity-0 transition
-                                            group-hover:opacity-100 hover:text-rose-600" />
+                    <X size={11} className="text-faint opacity-0 transition
+                                            group-hover:opacity-100 hover:text-negative" />
                   </button>
                 )}
               </span>
@@ -129,7 +129,7 @@ export default function ReportToolbar<T>({
         <Card>
           <div className="flex flex-wrap items-end gap-2">
             <div className="min-w-[200px] flex-1">
-              <label className="text-xs font-semibold text-slate-600">Name this view</label>
+              <label className="text-xs font-semibold text-body">Name this view</label>
               <input value={name} onChange={(e) => setName(e.target.value)}
                 placeholder="Month end, no opening column"
                 onKeyDown={(e) => { if (e.key === 'Enter') save(false); }}
@@ -144,7 +144,7 @@ export default function ReportToolbar<T>({
             </Button>
             <Button variant="ghost" onClick={() => setNaming(false)}>Cancel</Button>
           </div>
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-muted">
             Saves the columns, sorting and filters you have now. Only you see it
             unless you share it.
           </p>
@@ -153,7 +153,7 @@ export default function ReportToolbar<T>({
 
       {picker && allColumns && (
         <Card>
-          <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-600">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-body">
             <Settings2 size={13} /> Which columns to show
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -171,7 +171,7 @@ export default function ReportToolbar<T>({
                   }}
                   className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5
                               text-xs font-semibold transition ${
-                    on ? 'bg-brand-700 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                    on ? 'bg-brand-700 text-white' : 'bg-line-soft text-body'}`}>
                   {on && <Check size={11} />} {c.label}
                 </button>
               );

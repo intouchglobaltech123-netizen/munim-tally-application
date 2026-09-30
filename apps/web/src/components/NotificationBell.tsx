@@ -21,9 +21,9 @@ const POLL_MS = 60_000;
 
 const ICON = { info: Info, warn: AlertTriangle, bad: CircleAlert };
 const TONE = {
-  info: 'text-slate-400',
-  warn: 'text-amber-500',
-  bad: 'text-rose-500',
+  info: 'text-faint',
+  warn: 'text-warn',
+  bad: 'text-negative',
 };
 
 /** Where tapping a notification should go. Routes, not URLs, from the server. */
@@ -77,11 +77,11 @@ export default function NotificationBell() {
       <button onClick={() => setOpen(!open)}
         aria-label={unread ? `${unread} unread notifications` : 'Notifications'}
         className="relative flex h-9 w-9 items-center justify-center rounded-lg
-                   text-slate-500 transition hover:bg-slate-100 hover:text-slate-700">
+                   text-muted transition hover:bg-line-soft hover:text-body">
         <Bell size={18} />
         {unread > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center
-                           justify-center rounded-full bg-rose-600 px-1 text-[10px]
+                           justify-center rounded-full bg-negative px-1 text-[10px]
                            font-bold text-white">
             {unread > 9 ? '9+' : unread}
           </span>
@@ -90,9 +90,9 @@ export default function NotificationBell() {
 
       {open && (
         <div className="absolute right-0 z-50 mt-2 w-[360px] overflow-hidden rounded-xl
-                        border border-line bg-white shadow-lg">
+                        border border-line bg-surface shadow-lg">
           <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
-            <span className="text-sm font-semibold text-slate-800">
+            <span className="text-sm font-semibold text-ink">
               {unread > 0 ? `${unread} new` : 'Notifications'}
             </span>
             <div className="flex items-center gap-2">
@@ -103,7 +103,7 @@ export default function NotificationBell() {
                 </button>
               )}
               <Link href="/notifications" onClick={() => setOpen(false)}
-                className="text-slate-400 hover:text-slate-600" aria-label="Notification settings">
+                className="text-faint hover:text-body" aria-label="Notification settings">
                 <Settings2 size={14} />
               </Link>
             </div>
@@ -111,7 +111,7 @@ export default function NotificationBell() {
 
           <div className="max-h-[420px] overflow-auto">
             {!feed.data?.notifications.length ? (
-              <p className="px-4 py-8 text-center text-sm text-slate-400">
+              <p className="px-4 py-8 text-center text-sm text-faint">
                 Nothing yet. New sales, overdue bills and sync problems appear here.
               </p>
             ) : feed.data.notifications.map((n) => {
@@ -123,13 +123,13 @@ export default function NotificationBell() {
                     await post('/v1/notifications/read', { ids: [Number(n.id)] });
                     feed.reload();
                   }}
-                  className={`flex gap-2.5 border-b border-slate-50 px-4 py-2.5 transition
-                              last:border-0 hover:bg-slate-50 ${n.read ? 'opacity-60' : ''}`}>
+                  className={`flex gap-2.5 border-b border-line-soft px-4 py-2.5 transition
+                              last:border-0 hover:bg-canvas ${n.read ? 'opacity-60' : ''}`}>
                   <I size={15} className={`mt-0.5 shrink-0 ${TONE[n.level]}`} />
                   <div className="min-w-0">
-                    <div className="text-sm font-medium text-slate-800">{n.title}</div>
-                    {n.body && <div className="text-xs text-slate-500">{n.body}</div>}
-                    <div className="mt-0.5 text-[11px] text-slate-400">
+                    <div className="text-sm font-medium text-ink">{n.title}</div>
+                    {n.body && <div className="text-xs text-muted">{n.body}</div>}
+                    <div className="mt-0.5 text-[11px] text-faint">
                       {n.label} · {ago(n.at)}
                     </div>
                   </div>

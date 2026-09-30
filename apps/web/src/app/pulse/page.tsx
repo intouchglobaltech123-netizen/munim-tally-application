@@ -101,16 +101,16 @@ export default function PulsePage() {
         How long the money lasts
       </SectionTitle>
       <Card className={`mb-6 ${
-        runway.tone === 'bad' ? 'border-rose-200 bg-rose-50'
-          : runway.tone === 'warn' ? 'border-amber-200 bg-amber-50' : ''}`}>
+        runway.tone === 'bad' ? 'border-negative/30 bg-negative-soft'
+          : runway.tone === 'warn' ? 'border-warn/40 bg-warn-soft' : ''}`}>
         <div className="grid gap-4 sm:grid-cols-4">
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-wide text-muted">
               Runway
             </div>
             <div className={`figure mt-1 text-3xl font-bold ${
-              runway.tone === 'bad' ? 'text-rose-700'
-                : runway.tone === 'warn' ? 'text-amber-700' : 'text-ink'}`}>
+              runway.tone === 'bad' ? 'text-negative'
+                : runway.tone === 'warn' ? 'text-warn' : 'text-ink'}`}>
               {runway.months === null ? 'Unknown' : `${runway.months} mo`}
             </div>
             {runway.monthsWithReceivables !== null && (
@@ -159,7 +159,7 @@ export default function PulsePage() {
               <table className="w-full min-w-[560px] text-sm">
                 <thead>
                   <tr className="border-b border-line text-left text-xs uppercase
-                                 tracking-wide text-slate-400">
+                                 tracking-wide text-faint">
                     <th className="pb-2 pr-3 font-semibold">Customer</th>
                     <th className="pb-2 pr-3 text-right font-semibold">Bills</th>
                     <th className="pb-2 pr-3 text-right font-semibold">Avg days</th>
@@ -170,7 +170,7 @@ export default function PulsePage() {
                 </thead>
                 <tbody>
                   {payers.payers.filter((x) => matches(x, payerSpecs, pf)).map((x) => (
-                    <tr key={x.party} className="border-b border-slate-50 last:border-0">
+                    <tr key={x.party} className="border-b border-line-soft last:border-0">
                       <td className="py-2 pr-3 text-ink">{x.party}</td>
                       <td className="py-2 pr-3 text-right text-muted tabular-nums">
                         {x.bills}
@@ -179,8 +179,8 @@ export default function PulsePage() {
                         {x.averageDays}
                       </td>
                       <td className={`py-2 pr-3 text-right tabular-nums font-medium ${
-                        (x.daysAgainstTerms ?? 0) > 3 ? 'text-rose-600'
-                          : (x.daysAgainstTerms ?? 0) < -3 ? 'text-emerald-700'
+                        (x.daysAgainstTerms ?? 0) > 3 ? 'text-negative'
+                          : (x.daysAgainstTerms ?? 0) < -3 ? 'text-positive'
                           : 'text-muted'}`}>
                         {x.daysAgainstTerms === null ? '—'
                           : x.daysAgainstTerms > 0 ? `+${x.daysAgainstTerms}`
@@ -196,8 +196,8 @@ export default function PulsePage() {
               </table>
             </div>
           </Card>
-          <p className="mb-6 flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2
-                        text-xs text-slate-500">
+          <p className="mb-6 flex items-start gap-2 rounded-lg bg-canvas px-3 py-2
+                        text-xs text-muted">
             <Info size={13} className="mt-0.5 shrink-0" /> {payers.note}
           </p>
         </>
@@ -215,8 +215,8 @@ export default function PulsePage() {
         <MoverCard title="Stopped buying" icon={UserMinus} rows={movers.lost} tone="bad"
           field="beforePaise" />
       </div>
-      <p className="mb-6 flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2
-                    text-xs text-slate-500">
+      <p className="mb-6 flex items-start gap-2 rounded-lg bg-canvas px-3 py-2
+                    text-xs text-muted">
         <Info size={13} className="mt-0.5 shrink-0" /> {movers.note}
       </p>
 
@@ -251,7 +251,7 @@ function Figure({ label, value }: { label: string; value: string }) {
 
 function PayerRow({ p }: { p: Payer }) {
   return (
-    <div className="flex items-center justify-between border-b border-slate-50 py-2
+    <div className="flex items-center justify-between border-b border-line-soft py-2
                     text-sm last:border-0">
       <div>
         <div className="text-ink">{p.party}</div>
@@ -280,10 +280,10 @@ function MoverCard({ title, icon: Icon, rows, tone, field = 'changePaise' }: {
         <p className="text-sm text-muted">Nobody.</p>
       ) : rows.map((r) => (
         <div key={r.party} className="flex items-center justify-between border-b
-                                      border-slate-50 py-2 text-sm last:border-0">
+                                      border-line-soft py-2 text-sm last:border-0">
           <span className="truncate text-ink">{r.party}</span>
           <span className={`shrink-0 font-medium tabular-nums ${
-            tone === 'good' ? 'text-emerald-700' : 'text-rose-700'}`}>
+            tone === 'good' ? 'text-positive' : 'text-negative'}`}>
             {field === 'changePaise' && r.changePaise > 0 ? '+' : ''}
             {inr(Math.abs(r[field]))}
             {r.changePercent !== null && field === 'changePaise' && (
@@ -311,7 +311,7 @@ function DayBars({ days }: { days: RhythmDayView[] }) {
       {days.map((d) => (
         <div key={d.day} className="flex items-center gap-3">
           <span className="w-10 shrink-0 text-xs font-medium text-muted">{d.short}</span>
-          <div className="h-6 flex-1 overflow-hidden rounded bg-slate-50">
+          <div className="h-6 flex-1 overflow-hidden rounded bg-canvas">
             {d.daysOpen > 0 && (
               <div className="h-full rounded bg-brand-500/85"
                 style={{ width: `${Math.max(2, (d.averagePaise / max) * 100)}%` }} />

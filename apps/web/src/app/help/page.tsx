@@ -56,14 +56,14 @@ export default function HelpPage() {
         subtitle={`We aim to reply within ${d.responseHours[priority]} working hours on ${d.planLabel}.`} />
 
       {said && (
-        <Card className="mb-6 border-emerald-300 bg-emerald-50">
-          <div className="flex items-start gap-2 text-sm text-emerald-900">
+        <Card className="mb-6 border-positive/30 bg-positive-soft">
+          <div className="flex items-start gap-2 text-sm text-positive">
             <CheckCircle2 size={15} className="mt-0.5 shrink-0" /> {said}
           </div>
         </Card>
       )}
       {err && (
-        <div className="mb-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-800">{err}</div>
+        <div className="mb-4 rounded-lg bg-negative-soft px-3 py-2 text-sm text-negative">{err}</div>
       )}
 
       {/* What we can already see is wrong, before anybody types anything. */}
@@ -74,13 +74,13 @@ export default function HelpPage() {
           </SectionTitle>
           <div className="mb-6 space-y-3">
             {d.suggestions.map((s) => (
-              <Card key={s.title} className="border-amber-200 bg-amber-50">
+              <Card key={s.title} className="border-warn/40 bg-warn-soft">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 font-semibold text-amber-900">
+                    <div className="flex items-center gap-2 font-semibold text-warn">
                       <AlertTriangle size={15} /> {s.title}
                     </div>
-                    <p className="mt-1 text-sm text-amber-800">{s.detail}</p>
+                    <p className="mt-1 text-sm text-warn">{s.detail}</p>
                   </div>
                   <Link href={s.href}>
                     <Button variant="ghost" icon={ExternalLink}>{s.action}</Button>
@@ -101,9 +101,9 @@ export default function HelpPage() {
           <Card className="mb-6">
             {t.data!.tickets.map((x) => (
               <Link key={x.id} href={`/help/${x.id}`}
-                className="flex items-center gap-3 border-b border-slate-50 py-2.5
-                           last:border-0 hover:bg-slate-50">
-                <span className="w-14 font-mono text-xs text-slate-400">#{x.number}</span>
+                className="flex items-center gap-3 border-b border-line-soft py-2.5
+                           last:border-0 hover:bg-canvas">
+                <span className="w-14 font-mono text-xs text-faint">#{x.number}</span>
                 <div className="flex-1">
                   <div className="text-sm font-medium text-ink">{x.subject}</div>
                   <div className="text-xs text-muted">
@@ -117,7 +117,7 @@ export default function HelpPage() {
                     : ['resolved', 'closed'].includes(x.status) ? 'muted' : 'ok'}>
                   {x.statusLabel}
                 </Badge>
-                <ChevronRight size={15} className="text-slate-300" />
+                <ChevronRight size={15} className="text-faint" />
               </Link>
             ))}
           </Card>
@@ -171,12 +171,12 @@ export default function HelpPage() {
       <SectionTitle icon={MessageSquare}>Common questions</SectionTitle>
       <Card className="mb-6">
         {d.faq.map((f, i) => (
-          <div key={f.q} className="border-b border-slate-50 last:border-0">
+          <div key={f.q} className="border-b border-line-soft last:border-0">
             <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
               className="flex w-full items-center gap-2 py-2.5 text-left">
               {openFaq === i
-                ? <ChevronDown size={15} className="shrink-0 text-slate-400" />
-                : <ChevronRight size={15} className="shrink-0 text-slate-400" />}
+                ? <ChevronDown size={15} className="shrink-0 text-faint" />
+                : <ChevronRight size={15} className="shrink-0 text-faint" />}
               <span className="text-sm font-medium text-ink">{f.q}</span>
             </button>
             {openFaq === i && (

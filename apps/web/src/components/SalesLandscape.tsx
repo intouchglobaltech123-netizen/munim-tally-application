@@ -50,7 +50,7 @@ export default function SalesLandscape({ cells, months, parties, money = axisMon
 
   if (!months.length || !parties.length) {
     return (
-      <div className="flex h-72 items-center justify-center rounded-lg bg-slate-50 text-sm text-slate-400">
+      <div className="flex h-72 items-center justify-center rounded-lg bg-canvas text-sm text-faint">
         Not enough history yet to draw a landscape.
       </div>
     );
@@ -83,7 +83,7 @@ export default function SalesLandscape({ cells, months, parties, money = axisMon
     <div>
       <div
         className="relative h-[380px] cursor-grab select-none overflow-hidden rounded-lg
-                   bg-gradient-to-b from-slate-50 to-slate-100 active:cursor-grabbing"
+                   bg-gradient-to-b from-canvas to-line-soft active:cursor-grabbing"
         style={{ perspective: 1100 }}
         onPointerDown={onDown} onPointerMove={onMove}
         onPointerUp={onUp} onPointerLeave={onUp}
@@ -155,7 +155,7 @@ export default function SalesLandscape({ cells, months, parties, money = axisMon
         </div>
 
         {hover && (
-          <div className="pointer-events-none absolute left-3 top-3 rounded-lg bg-slate-900/90
+          <div className="pointer-events-none absolute left-3 top-3 rounded-lg bg-ink/90
                           px-3 py-2 text-xs text-white shadow-lg">
             <div className="font-semibold">{hover.party}</div>
             <div className="opacity-80">
@@ -166,23 +166,23 @@ export default function SalesLandscape({ cells, months, parties, money = axisMon
           </div>
         )}
 
-        <div className="pointer-events-none absolute bottom-3 right-3 text-[11px] text-slate-400">
+        <div className="pointer-events-none absolute bottom-3 right-3 text-[11px] text-faint">
           Drag to turn · across: months · back: customers · up: sales
         </div>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <button onClick={() => { setRotX(58); setRotZ(-38); }}
-          className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold
-                     text-slate-600 transition hover:bg-slate-200">
+          className="rounded-lg bg-line-soft px-3 py-1.5 text-xs font-semibold
+                     text-body transition hover:bg-line">
           Reset view
         </button>
         <button onClick={() => { setRotX(90); setRotZ(0); }}
-          className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold
-                     text-slate-600 transition hover:bg-slate-200">
+          className="rounded-lg bg-line-soft px-3 py-1.5 text-xs font-semibold
+                     text-body transition hover:bg-line">
           Look straight down
         </button>
-        <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+        <div className="flex items-center gap-1.5 text-[11px] text-faint">
           <span>low</span>
           {COLOURS.map((c) => (
             <span key={c} className="h-2.5 w-5 rounded-sm" style={{ background: c }} />

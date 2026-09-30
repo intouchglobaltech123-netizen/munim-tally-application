@@ -123,8 +123,8 @@ export default function VoucherPage({ params }: {
           label={copied ? 'Copied' : 'Share'} onClick={share} />
         {/* The full document, with letterhead, HSN and the tax split. */}
         <Link href={`/invoice/${doc.id}`}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-2
-                     text-xs font-semibold text-slate-700 transition hover:bg-slate-200">
+          className="inline-flex items-center gap-1.5 rounded-lg bg-line-soft px-3 py-2
+                     text-xs font-semibold text-body transition hover:bg-line">
           <FileText size={14} /> Invoice view
         </Link>
       </div>
@@ -132,17 +132,17 @@ export default function VoucherPage({ params }: {
       {data.paymentStatus && (
         <div className={`no-print mb-5 flex flex-wrap items-center gap-3 rounded-lg px-4 py-3
                          text-sm ring-1 ${
-          data.paymentStatus === 'paid' ? 'bg-emerald-50 ring-emerald-200'
-            : data.paymentStatus === 'part-paid' ? 'bg-amber-50 ring-amber-200'
-            : 'bg-rose-50 ring-rose-200'}`}>
+          data.paymentStatus === 'paid' ? 'bg-positive-soft ring-positive/30'
+            : data.paymentStatus === 'part-paid' ? 'bg-warn-soft ring-warn/30'
+            : 'bg-negative-soft ring-negative/30'}`}>
           {(() => { const I = PAID[data.paymentStatus].icon; return (
             <I size={17} className={
-              data.paymentStatus === 'paid' ? 'text-emerald-600'
-                : data.paymentStatus === 'part-paid' ? 'text-amber-600' : 'text-rose-600'} />
+              data.paymentStatus === 'paid' ? 'text-positive'
+                : data.paymentStatus === 'part-paid' ? 'text-warn' : 'text-negative'} />
           ); })()}
-          <span className="font-semibold text-slate-800">{PAID[data.paymentStatus].label}</span>
+          <span className="font-semibold text-ink">{PAID[data.paymentStatus].label}</span>
           {data.paymentStatus !== 'paid' && (
-            <span className="text-slate-600">
+            <span className="text-body">
               {money(data.paidPaise ?? 0)} received of {money(data.amountPaise)} ·{' '}
               <b>{money(data.outstandingPaise ?? 0)} outstanding</b>
             </span>
@@ -162,7 +162,7 @@ export default function VoucherPage({ params }: {
       )}
 
       {data.against && (
-        <div className="no-print mb-5 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-700">
+        <div className="no-print mb-5 rounded-lg bg-canvas px-4 py-3 text-sm text-body">
           {data.against.kind === 'advance'
             ? 'Advance — money taken before any bill was raised.'
             : `Settles ${data.against.multiple ? 'invoices' : 'invoice'} ${data.against.invoices.join(', ')}.`}
@@ -170,9 +170,9 @@ export default function VoucherPage({ params }: {
       )}
 
       {data.contra?.label && (
-        <div className="no-print mb-5 flex items-center gap-2 rounded-lg bg-slate-50 px-4 py-3
-                        text-sm text-slate-700">
-          <ArrowLeftRight size={15} className="text-slate-400" />
+        <div className="no-print mb-5 flex items-center gap-2 rounded-lg bg-canvas px-4 py-3
+                        text-sm text-body">
+          <ArrowLeftRight size={15} className="text-faint" />
           <span className="font-semibold">{data.contra.label}</span>
         </div>
       )}
@@ -337,7 +337,7 @@ function ActionButton({ icon: Icon, label, onClick, primary }: {
       className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold
                   transition ${primary
         ? 'bg-brand-700 text-white hover:bg-brand-800'
-        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
+        : 'bg-line-soft text-body hover:bg-line'}`}>
       <Icon size={14} /> {label}
     </button>
   );

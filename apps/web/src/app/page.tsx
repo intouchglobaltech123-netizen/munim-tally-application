@@ -324,29 +324,29 @@ export default function DashboardPage() {
           <Card>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-xs font-medium text-slate-500">Open invoices</div>
-                <div className="mt-1 text-2xl font-bold tabular-nums text-slate-900">
+                <div className="text-xs font-medium text-muted">Open invoices</div>
+                <div className="mt-1 text-2xl font-bold tabular-nums text-ink">
                   {money(m.outstandingInvoices.paise)}
                 </div>
-                <div className="text-xs text-slate-400">
+                <div className="text-xs text-faint">
                   {m.outstandingInvoices.count} unpaid bills
                 </div>
               </div>
-              <Receipt size={22} className="text-slate-300" />
+              <Receipt size={22} className="text-faint" />
             </div>
           </Card>
           <Card>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-xs font-medium text-rose-600">Overdue</div>
-                <div className="mt-1 text-2xl font-bold tabular-nums text-rose-600">
+                <div className="text-xs font-medium text-negative">Overdue</div>
+                <div className="mt-1 text-2xl font-bold tabular-nums text-negative">
                   {money(m.overdueInvoices.paise)}
                 </div>
-                <div className="text-xs text-slate-400">
+                <div className="text-xs text-faint">
                   {m.overdueInvoices.count} past their due date
                 </div>
               </div>
-              <FileWarning size={22} className="text-rose-300" />
+              <FileWarning size={22} className="text-negative/50" />
             </div>
           </Card>
         </div>
@@ -359,12 +359,12 @@ export default function DashboardPage() {
         <SectionTitle icon={Coins} note="money in against money out">Cash flow</SectionTitle>
         <Card className="mb-6">
           <CashFlowChart data={data.charts.cashFlow} money={money} />
-          <div className="mt-2 flex gap-4 text-xs text-slate-500">
+          <div className="mt-2 flex gap-4 text-xs text-muted">
             <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-sm bg-emerald-700" /> In
+              <span className="h-2.5 w-2.5 rounded-sm bg-positive" /> In
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-sm bg-rose-700" /> Out
+              <span className="h-2.5 w-2.5 rounded-sm bg-negative" /> Out
             </span>
           </div>
         </Card>
@@ -412,7 +412,7 @@ export default function DashboardPage() {
           </ChartCard>
           <ChartCard title="Salesperson performance" icon={UserCheck}>
             {data.charts.salespeople.length === 0 ? (
-              <p className="py-6 text-center text-xs text-slate-400">
+              <p className="py-6 text-center text-xs text-faint">
                 Mark people as salespeople in Users &amp; roles, and set the name
                 Tally writes in the narration.
               </p>
@@ -444,7 +444,7 @@ export default function DashboardPage() {
             <button key={p.key} onClick={() => setPeriod(p.key)}
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                 period === p.key ? 'bg-brand-700 text-white'
-                                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                                 : 'bg-line-soft text-body hover:bg-line'}`}>
               {p.label}
             </button>
           ))}
@@ -452,13 +452,13 @@ export default function DashboardPage() {
             className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs
                         font-semibold transition ${
               period === 'custom' ? 'bg-brand-700 text-white'
-                                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                                  : 'bg-line-soft text-body hover:bg-line'}`}>
             <CalendarRange size={13} /> Custom
           </button>
           <button onClick={() => setShowFilters(!showFilters)}
             className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs
                         font-semibold transition ${
-              scoped ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+              scoped ? 'bg-warn text-white' : 'bg-line-soft text-body hover:bg-line'}`}>
             <Filter size={13} /> {scoped ? 'Filtered' : 'Filter'}
           </button>
         </div>
@@ -467,7 +467,7 @@ export default function DashboardPage() {
           <div className="flex flex-wrap items-center gap-2">
             <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
               className="rounded-lg border border-line px-3 py-1.5 text-sm" />
-            <span className="text-sm text-slate-400">to</span>
+            <span className="text-sm text-faint">to</span>
             <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
               className="rounded-lg border border-line px-3 py-1.5 text-sm" />
           </div>
@@ -485,7 +485,7 @@ export default function DashboardPage() {
             </div>
             {scoped && (
               <button onClick={() => { setParty(''); setItem(''); setSalesperson(''); }}
-                className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-rose-600">
+                className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-negative">
                 <X size={13} /> Clear filters
               </button>
             )}
@@ -652,8 +652,8 @@ function ChartCard({ title, icon: Icon, children }: {
   return (
     <Card>
       <div className="mb-3 flex items-center gap-2">
-        <Icon size={15} className="text-slate-400" />
-        <h3 className="text-sm font-semibold text-slate-700">{title}</h3>
+        <Icon size={15} className="text-faint" />
+        <h3 className="text-sm font-semibold text-body">{title}</h3>
       </div>
       {children}
     </Card>
@@ -666,7 +666,7 @@ function Picker({ label, value, onChange, options }: {
 }) {
   return (
     <div>
-      <label className="text-xs font-semibold text-slate-600">{label}</label>
+      <label className="text-xs font-semibold text-body">{label}</label>
       <input list={`opt-${label}`} value={value} onChange={(e) => onChange(e.target.value)}
         placeholder="Everything"
         className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm
