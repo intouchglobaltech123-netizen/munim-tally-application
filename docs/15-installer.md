@@ -338,6 +338,27 @@ The only real fixes, in order of how fast they help:
      K7". Attach the file and say it is your own product.
    - Quick Heal and Microsoft Defender each have the same kind of form. Do all
      three: the detections are independent.
+   The report itself, ready to send:
+
+   > **Subject:** False Positive: file being detected by K7
+   >
+   > Our own software is being quarantined by K7 Total Security.
+   >
+   > Product: Munim (Tally connector for small businesses)
+   > File: Munim-Setup.bat / Munim-Connector.ps1
+   > Download URL: https://munim-tally-application-production.up.railway.app/v1/connector/installer
+   > Detection: Suspicious Object in Program (ID709056)
+   > Action taken by K7: Quarantined
+   >
+   > What it does, and why it looks the way it does: it reads a local Tally
+   > installation over Tally's own HTTP gateway on localhost:9000 and uploads
+   > the data to our cloud so the owner can see their books on their phone. It
+   > registers one scheduled task so it keeps syncing after a restart. It is
+   > read-only into Tally. The file is attached.
+   >
+   > Please whitelist it. We are the publisher and can provide any further
+   > detail you need.
+
 2. **Buy a code-signing certificate** and run `scripts\sign-connector.ps1`.
    This is the answer for a product that ships to strangers - an OV certificate
    is roughly ₹15–25k a year and earns reputation over weeks; EV costs more and

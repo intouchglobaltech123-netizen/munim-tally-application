@@ -251,12 +251,39 @@ export default function ConnectPage() {
             {approveErr ? (
               <p className="mt-2 text-xs text-negative">{approveErr}</p>
             ) : null}
-            <p className="mt-3 text-xs text-muted">
-              Already quarantined? Open your antivirus, restore the file from
-              quarantine, and tell it to allow{' '}
-              <code className="rounded bg-line-soft px-1">C:\ProgramData\Munim</code>.
-              Munim only ever reads Tally — it cannot change your books.
-            </p>
+            <details className="mt-4 rounded-lg border border-line bg-canvas p-3">
+              <summary className="cursor-pointer text-sm font-semibold">
+                Running K7 or Quick Heal? Do this first
+              </summary>
+              <p className="mt-2 text-sm text-body">
+                They quarantine this kind of file on sight, whoever made it.
+                Allow the folder before you download and the install just works:
+              </p>
+              <ol className="mt-2 space-y-1 text-sm text-body">
+                <li>
+                  1. Open <b>K7</b> → <b>Settings</b> → <b>Real Time
+                  Protection</b> → <b>Click Here to Manage Exclusions</b>.
+                </li>
+                <li>
+                  2. <b>Add Entry</b> → <b>Add Folder</b> →{' '}
+                  <code className="rounded bg-line-soft px-1">C:\ProgramData\Munim</code>,
+                  tick <b>Include Subfolders</b>, then <b>OK</b>.
+                </li>
+                <li>
+                  3. Do the same for your <b>Downloads</b> folder, then download
+                  again.
+                </li>
+              </ol>
+              <p className="mt-2 text-sm text-body">
+                Already taken? <b>Reports</b> → <b>Quarantine Manager</b> →
+                select the Munim file → <b>Restore</b>.
+              </p>
+              <p className="mt-2 text-xs text-muted">
+                Quick Heal is the same idea: Settings → Exclude Files &amp;
+                Folders. Munim only ever reads Tally — it cannot change your
+                books, and you can disconnect it from <b>Devices</b> at any time.
+              </p>
+            </details>
           </Card>
 
           <Card>
