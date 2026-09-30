@@ -171,10 +171,27 @@ async function overview(ctx, tallyGuid) {
      WHERE v.company_id = $1 AND ${LIVE}
        AND v.vch_date BETWEEN $2::date AND $3::date${scope.sql}`;
 
-  const [flow, prevFlow, today, balances, bills, series, byParty, bySupplier,
+  /*
+   * The same period one year earlier.
+   *
+   * The period-on-period figure already here answers "how is this month
+   * against last month", which for a seasonal business is the wrong question -
+   * a Diwali month beats the one before it every year and says nothing. Shops
+   * plan against last year, so the dashboard has to hold both.
+   */
+  const lastYear = {
+    from: new Date(Date.UTC(period.from.getUTCFullYear() - 1,
+      period.from.getUTCMonth(), period.from.getUTCDate())),
+    to: new Date(Date.UTC(period.to.getUTCFullYear() - 1,
+      period.to.getUTCMonth(), period.to.getUTCDate())),
+  };
+  const yearBase = [co.id, iso(lastYear.from), iso(lastYear.to), ...scope.args];
+
+  const [flow, prevFlow, yearFlow, today, balances, bills, series, byParty, bySupplier,
          byItem, byGroup, bySalesperson, cashflow, landscape, allTime] = await Promise.all([
     query(flowSql, base),
     query(flowSql, prevBase),
+    query(flowSql, yearBase),
 
     /*
      * "Today" is the last day the books contain, for the same reason every
@@ -329,6 +346,36 @@ async function overview(ctx, tallyGuid) {
   const purchases = Number(f.purchases);
   const expenses = Number(b.expenses);
   const income = Number(b.income);
+  const y = yearFlow.rows[0];
+
+  /*
+   * The ratios an owner is actually asking about.
+   *
+   * Every one of these is arithmetic on figures already fetched above, so they
+   * cannot disagree with the tiles beside them - which is the entire reason
+   * this endpoint fetches everything at once. Computing them in the browser
+   * would put the same arithmetic in two apps and let them drift.
+   *
+   * null rather than 0 wherever the answer is unknowable. "0 days to collect"
+   * is a claim that customers pay instantly; a shop with no sales this period
+   * has made no such claim, and a dashboard that invents one is worse than a
+   * blank.
+   */
+  const days = Math.max(1,
+    Math.round((period.to - period.from) / 86_400_000) + 1);
+  const cashAndBank = Number(b.cash) + Number(b.bank);
+  const receipts = Number(f.receipts);
+  const payments = Number(f.payments);
+  const receivables = Number(b.receivables);
+  const payables = Number(b.payables);
+  const saleCount = Number(f.sale_count);
+
+  const perDay = (total) => (total > 0 ? total / days : 0);
+  const ratioDays = (balance, flowTotal) => {
+    const rate = perDay(flowTotal);
+    if (rate <= 0) return null;
+    return Math.round(balance / rate);
+  };
 
   return {
     company: { tallyGuid: co.tally_guid, name: co.name },
@@ -369,6 +416,39 @@ async function overview(ctx, tallyGuid) {
       todayPurchases: { paise: Number(t.purchases) },
       todayReceipts:  { paise: Number(t.receipts) },
       todayPayments:  { paise: Number(t.payments) },
+
+      /*
+       * The eight that say how the business is running, not just what it holds.
+       *
+       * A balance tells an owner where they are. These tell them where they are
+       * going, which is the half Livekeeping leaves to the accountant.
+       */
+      salesLastYear:  { paise: Number(y.sales), changePct: pct(f.sales, y.sales),
+                        from: iso(lastYear.from), to: iso(lastYear.to),
+                        note: 'The same dates one year ago.' },
+      // Receivables measured in days of trade. 45 means a sale made today is
+      // cash in about six weeks, which is the number that decides whether a
+      // shop can pay its own suppliers.
+      daysToCollect:  { days: ratioDays(receivables, sales),
+                        note: 'How long customers take to pay, at this period\'s rate of sale.' },
+      daysToPay:      { days: ratioDays(payables, purchases),
+                        note: 'How long this business takes to pay its suppliers.' },
+      // Collected against billed. Under 100% for a period means the debt pile
+      // grew, however good the sales figure beside it looks.
+      collectionRate: { percent: sales > 0 ? Math.round((receipts / sales) * 1000) / 10 : null,
+                        note: 'Money received against money billed in this period.' },
+      // Cash divided by what actually leaves the bank. Deliberately built on
+      // payments made rather than on booked expenses: a bill that has not been
+      // paid has not yet touched the cash this measures.
+      cashRunwayDays: { days: ratioDays(cashAndBank, payments),
+                        note: 'How long the cash and bank balance lasts at this period\'s outgoings.' },
+      workingCapital: { paise: receivables + Number(b.stock) + cashAndBank - payables,
+                        note: 'Receivables plus stock plus cash, less payables.' },
+      averageSale:    { paise: saleCount > 0 ? Math.round(sales / saleCount) : 0,
+                        count: saleCount,
+                        note: 'Average value of one sale in this period.' },
+      dailyRunRate:   { paise: Math.round(perDay(sales)), days,
+                        note: 'Average sales per day across this period.' },
     },
 
     /** The twelve. Each ready to draw, with no arithmetic left for the client. */

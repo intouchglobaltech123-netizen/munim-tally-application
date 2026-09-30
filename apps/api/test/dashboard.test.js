@@ -150,19 +150,56 @@ test('cancelled and optional vouchers never count', async () => {
   assert.equal(d.metrics.purchases.paise, 50000);
 });
 
-test('all eighteen metrics are present and numeric', async () => {
+test('every money metric is present and numeric', async () => {
   const f = await fixture();
   const d = await dash.overview(ctxFor(f), f.co.tally_guid);
   const expected = [
     'sales', 'purchases', 'grossProfit', 'netProfit', 'receivables', 'payables',
     'cash', 'bank', 'expenses', 'stock', 'gstPayable', 'gstReceivable',
     'outstandingInvoices', 'overdueInvoices', 'todaySales', 'todayPurchases',
-    'todayReceipts', 'todayPayments',
+    'todayReceipts', 'todayPayments', 'salesLastYear', 'workingCapital',
+    'averageSale', 'dailyRunRate',
   ];
-  assert.equal(Object.keys(d.metrics).length, 18);
+  assert.equal(Object.keys(d.metrics).length, 26);
   for (const k of expected) {
     assert.equal(typeof d.metrics[k].paise, 'number', `${k} is a number`);
   }
+});
+
+test('a ratio nobody can know is null, not zero', async () => {
+  /*
+   * "0 days to collect" claims customers pay the instant they are billed.
+   * A period with no sales has made no such claim, and a dashboard that
+   * invents one is worse than a blank tile.
+   */
+  const f = await fixture();
+  const quiet = await dash.overview(
+    ctxFor(f, '?period=custom&from=2019-01-01&to=2019-01-31'), f.co.tally_guid);
+
+  assert.equal(quiet.metrics.daysToCollect.days, null);
+  assert.equal(quiet.metrics.daysToPay.days, null);
+  assert.equal(quiet.metrics.collectionRate.percent, null);
+  assert.equal(quiet.metrics.cashRunwayDays.days, null);
+});
+
+test('the period is also compared with the same dates last year', async () => {
+  // Month-on-month is the wrong question for a seasonal shop: a Diwali month
+  // beats the one before it every year and says nothing.
+  const f = await fixture();
+  const d = await dash.overview(
+    ctxFor(f, '?period=custom&from=2026-08-01&to=2026-08-31'), f.co.tally_guid);
+
+  assert.equal(d.metrics.salesLastYear.from, '2025-08-01');
+  assert.equal(d.metrics.salesLastYear.to, '2025-08-31');
+  assert.equal(typeof d.metrics.salesLastYear.paise, 'number');
+});
+
+test('working capital nets what is owed against what is owing', async () => {
+  const f = await fixture();
+  const d = await dash.overview(ctxFor(f), f.co.tally_guid);
+  const m = d.metrics;
+  assert.equal(m.workingCapital.paise,
+    m.receivables.paise + m.stock.paise + m.cash.paise + m.bank.paise - m.payables.paise);
 });
 
 test('all twelve charts are present', async () => {

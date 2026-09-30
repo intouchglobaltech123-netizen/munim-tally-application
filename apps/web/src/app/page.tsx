@@ -127,7 +127,7 @@ export default function DashboardPage() {
    * the default is right for almost everybody anyway.
    */
   const layout: Pick<DashboardLayout, 'widgets'> = prefs.data?.dashboard ?? {
-    widgets: ['today', 'trading', 'money', 'invoices', 'cashflow', 'landscape', 'rankings']
+    widgets: ['today', 'trading', 'health', 'money', 'invoices', 'cashflow', 'landscape', 'rankings']
       .map((key) => ({ key, label: key, module: 'dashboard' })),
   };
 
@@ -176,6 +176,88 @@ export default function DashboardPage() {
 
       </>
     ),
+    /*
+     * How the business is RUNNING, as opposed to what it holds.
+     *
+     * Every tile here is a ratio the server computed from the same snapshot as
+     * the totals above, so they cannot disagree. These are the numbers an
+     * accountant asks for first and no phone app for Tally puts on the front
+     * screen: a shop can be selling well, be profitable on paper, and still run
+     * out of money because customers take 70 days to pay.
+     */
+    health: () => (
+      <>
+        <SectionTitle icon={Clock3} note={data.period.label}>How it is running</SectionTitle>
+        <div className="mb-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Ratio
+            label="Customers take"
+            value={m.daysToCollect.days == null ? null : `${m.daysToCollect.days} days`}
+            caption={m.daysToCollect.note}
+            icon={Clock3}
+            /* Beyond two months, money owed is money at risk. */
+            alert={(m.daysToCollect.days ?? 0) > 60}
+          />
+          <Ratio
+            label="You pay in"
+            value={m.daysToPay.days == null ? null : `${m.daysToPay.days} days`}
+            caption={m.daysToPay.note}
+            icon={CalendarRange}
+          />
+          <Ratio
+            label="Collected of billed"
+            value={m.collectionRate.percent == null ? null : `${m.collectionRate.percent}%`}
+            caption={m.collectionRate.note}
+            icon={Percent}
+            /* Under 80% for a period means the debt pile grew this period. */
+            alert={(m.collectionRate.percent ?? 100) < 80}
+          />
+          <Ratio
+            label="Cash lasts"
+            value={m.cashRunwayDays.days == null ? null : `${m.cashRunwayDays.days} days`}
+            caption={m.cashRunwayDays.note}
+            icon={Wallet}
+            alert={(m.cashRunwayDays.days ?? 999) < 30}
+          />
+          <Ratio
+            label="Average sale"
+            value={money(m.averageSale.paise)}
+            caption={`Across ${(m.averageSale.count ?? 0).toLocaleString('en-IN')} sales.`}
+            icon={Receipt}
+          />
+          <Ratio
+            label="Sales per day"
+            value={money(m.dailyRunRate.paise)}
+            caption={m.dailyRunRate.note}
+            icon={TrendingUp}
+          />
+          {/*
+            * Against last year, not against last month.
+            *
+            * A Diwali month beats the month before it every single year, so
+            * period-on-period flatters a seasonal business and then frightens
+            * it in January. The same dates a year ago is the comparison a shop
+            * owner actually makes.
+            */}
+          <Ratio
+            label="Same dates last year"
+            value={money(m.salesLastYear.paise)}
+            caption={m.salesLastYear.changePct == null
+              ? 'No sales in that period last year.'
+              : `This period is ${m.salesLastYear.changePct > 0 ? '+' : ''}`
+                + `${m.salesLastYear.changePct}% on last year.`}
+            icon={CalendarRange}
+            alert={(m.salesLastYear.changePct ?? 0) < 0}
+          />
+          <Ratio
+            label="Working capital"
+            value={money(m.workingCapital.paise)}
+            caption={m.workingCapital.note}
+            icon={Coins}
+            alert={m.workingCapital.paise < 0}
+          />
+        </div>
+      </>
+    ),
     money: () => (
       <>
         {/* Money. */}
@@ -196,13 +278,15 @@ export default function DashboardPage() {
           <Tile label="Money you owe" m={m.payables} icon={ArrowUpRight}
             money={money} size="lg" betterWhen="down"
             spark={data.charts.payableTrend} />
-          <Tile label="Working capital" icon={Coins} money={money} size="lg"
-            m={{
-              paise: m.receivables.paise + m.cash.paise + m.bank.paise - m.payables.paise,
-              note: 'Owed to you, plus cash and bank, less what you owe.',
-            }}
-            alert={m.receivables.paise + m.cash.paise + m.bank.paise
-                   - m.payables.paise < 0} />
+          {/*
+            * From the server, not computed here.
+            *
+            * The browser used to do this arithmetic itself and left stock out
+            * of it, so the same words meant two different numbers depending on
+            * which screen you read. One definition, one place.
+            */}
+          <Tile label="Working capital" m={m.workingCapital} icon={Coins} money={money}
+            size="lg" alert={m.workingCapital.paise < 0} />
         </div>
 
         <div className="mb-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -450,6 +534,47 @@ export default function DashboardPage() {
  *     up is not. `betterWhen` says which, so the arrow and its colour tell the
  *     truth instead of assuming every increase is progress.
  */
+/**
+ * A tile for a figure that is not money: days, a percentage, a comparison.
+ *
+ * Separate from Tile rather than another flag on it, because everything Tile
+ * does - the trend arrow, the sparkline, better-when-up - is meaningless for
+ * "45 days" and would have to be switched off one prop at a time.
+ *
+ * A null value prints an em dash and says why underneath. The alternative is
+ * printing 0, which reads as a fact and is a lie.
+ */
+function Ratio({ label, value, caption, icon: Icon, alert }: {
+  label: string;
+  value: string | null;
+  caption?: string;
+  icon: typeof TrendingUp;
+  alert?: boolean;
+}) {
+  return (
+    <Card className={alert && value ? 'border-negative/30' : undefined}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.07em] text-muted">
+            {label}
+          </div>
+          <div className={`figure mt-1.5 truncate text-[22px] font-bold leading-none tabular-nums ${
+            value == null ? 'text-faint' : alert ? 'text-negative' : 'text-ink'
+          }`}>
+            {value ?? '\u2014'}
+          </div>
+          {caption && (
+            <div className="mt-2 text-xs leading-snug text-faint">
+              {value == null ? 'Not enough trade in this period to say.' : caption}
+            </div>
+          )}
+        </div>
+        <span className="rounded-lg bg-canvas p-1.5 text-muted"><Icon size={15} /></span>
+      </div>
+    </Card>
+  );
+}
+
 function Tile({ label, m, icon: Icon, money, spark, size = 'md', betterWhen = 'up', alert }: {
   label: string;
   m: Metric;

@@ -37,6 +37,8 @@ const WIDGETS = {
                hint: 'Sales, purchases and profit for the period.' },
   money:     { label: 'Money',           module: 'dashboard',   default: true,
                hint: 'Receivables, payables, cash, bank, stock, GST.' },
+  health:    { label: 'How it is running', module: 'dashboard',  default: true,
+               hint: 'Days customers take to pay, collection rate, how long the cash lasts.' },
   invoices:  { label: 'Invoices',        module: 'outstanding', default: true,
                hint: 'How many are unpaid and how many are overdue.' },
   cashflow:  { label: 'Cash flow',       module: 'cashbank',    default: true,

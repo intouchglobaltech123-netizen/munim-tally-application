@@ -523,6 +523,14 @@ export type RolesPayload = {
 export type Metric = {
   paise: number; prev?: number; changePct?: number | null;
   count?: number; note?: string;
+  /*
+   * Ratios, and null where the answer is genuinely unknown - a period with no
+   * sales has no collection period, and printing 0 would claim customers pay
+   * the moment they are billed.
+   */
+  days?: number | null; percent?: number | null;
+  /** The window a comparison metric is measured against. */
+  from?: string; to?: string;
 };
 
 export type Overview = {
