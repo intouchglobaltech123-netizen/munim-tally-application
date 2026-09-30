@@ -2094,123 +2094,162 @@ function Install-Task {
   # invoice, looks at their phone, and sees nothing. This runs one long-lived
   # watcher instead, polling AlterID every few seconds - cheap, because a poll
   # with no changes returns nothing.
-  $psArgs = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$script`" watch"
+  $psArgs = "-NoProfile -ExecutionPolicy Bypass -File `"$script`" watch"
+
+  # Whatever an older version of Munim left behind. See Remove-LegacyStarters.
+  Remove-LegacyStarters
 
   <#
-    Started through wscript.exe, never powershell.exe directly.
+    One way to start automatically: a scheduled task. Nothing else.
 
-    powershell.exe is a console program, so Windows opens a console window for
-    it BEFORE -WindowStyle Hidden runs. Every five-minute retry found the
-    watcher already running and exited at once, so a black window flashed open
-    and shut on the owner's screen, again and again, for no visible reason.
-    wscript.exe has no console, and Run with window style 0 starts PowerShell
-    with none either.
+    Antivirus judges an installer by what it does, and the three things this
+    used to do are the three it watches for hardest - writing a .vbs script
+    file, adding an HKCU ...\Run entry, and a loop that restarts a hidden
+    PowerShell every minute. That is the shape of ordinary malware
+    persistence, so Defender, Quick Heal and K7 stop the install, and a shop
+    owner who reads "threat blocked" stops with it.
+
+    A scheduled task is the documented way to keep a program running and the
+    one antivirus expects to see. The only part of it that needs administrator
+    rights is the AtStartup trigger, so a machine without them registers the
+    same task without that trigger rather than falling back to something that
+    looks worse.
   #>
-  $launcher = Join-Path $script:DataDir 'Munim-Start.vbs'
+  $launcher = Get-WatchLauncher $psArgs
+  $action = New-ScheduledTaskAction -Execute $launcher.Path -Argument $launcher.Args
 
+  $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
+    -DontStopOnIdleEnd -ExecutionTimeLimit ([TimeSpan]::Zero) `
+    -MultipleInstances IgnoreNew -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) `
+    -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+
+  <#
+    Triggers, because a shop computer comes back in several different ways.
+
+      at log on      - the ordinary case, every morning
+      resume         - a laptop lid opened, which is neither a boot nor a logon
+      every 5 min    - the safety net. If the watcher was killed by anything at
+                       all, this starts it again; the mutex inside makes a
+                       second copy harmless. MultipleInstances=IgnoreNew means
+                       a healthy watcher is never interrupted by it
+      at startup     - the machine rebooted after a power cut and sits at the
+                       login screen until somebody arrives (administrator only)
+
+    StartWhenAvailable matters for a laptop that was asleep at the scheduled
+    time: without it, a missed run is simply skipped.
+  #>
+  $triggers = @(New-ScheduledTaskTrigger -AtLogOn)
+
+  <#
+    Waking from sleep, which is the case the other triggers all miss.
+
+    Closing a laptop lid is not a shutdown and opening it is not a logon, so
+    neither AtStartup nor AtLogOn ever fires - the machine simply resumes.
+    Until this trigger existed, a laptop opened at 9am waited up to five
+    minutes for the repeating trigger before anything synced.
+
+    Windows writes Event 1 to the Power-Troubleshooter log on every resume,
+    including from hibernate. Built as CIM rather than with a cmdlet because
+    Windows PowerShell 5.1 has no New-ScheduledTaskTrigger switch for an event
+    subscription.
+  #>
   try {
-    Write-HiddenLauncher $launcher $psArgs $false
-    $action = New-ScheduledTaskAction -Execute 'wscript.exe' -Argument "//B //NoLogo `"$launcher`""
-
-    <#
-      Three triggers, because a shop computer fails in three different ways.
-
-        at log on      - the ordinary case, every morning
-        at startup     - covers a machine that reboots after a power cut and
-                         sits at the login screen until someone arrives
-        every 5 min    - the safety net. If the watcher was killed by anything
-                         at all, this starts it again; the mutex inside makes a
-                         second copy harmless.
-
-      StartWhenAvailable matters for a laptop that was asleep at the scheduled
-      time: without it, a missed run is simply skipped.
-    #>
-    $triggers = @(New-ScheduledTaskTrigger -AtLogOn)
-    try { $triggers += New-ScheduledTaskTrigger -AtStartup } catch { }
-
-    <#
-      Waking from sleep, which is the case the other triggers all miss.
-
-      Closing a laptop lid is not a shutdown and opening it is not a logon, so
-      neither AtStartup nor AtLogOn ever fires - the machine simply resumes.
-      Until this trigger existed, a laptop opened at 9am waited up to five
-      minutes for the repeating trigger before anything synced, and if the old
-      process had survived the sleep holding dead sockets, it waited for the
-      staleness check instead.
-
-      Windows writes Event 1 to the Power-Troubleshooter log on every resume,
-      including from hibernate. Built as CIM rather than with a cmdlet because
-      Windows PowerShell 5.1 has no New-ScheduledTaskTrigger switch for an
-      event subscription.
-    #>
-    try {
-      $resumeXml = @'
+    $resumeXml = @'
 <QueryList><Query Id="0" Path="System"><Select Path="System">
 *[System[Provider[@Name='Microsoft-Windows-Power-Troubleshooter']
 and EventID=1]]
 </Select></Query></QueryList>
 '@
-      $resume = Get-CimClass -ClassName MSFT_TaskEventTrigger `
-        -Namespace Root/Microsoft/Windows/TaskScheduler -ErrorAction Stop
-      $t = New-CimInstance -CimClass $resume -ClientOnly
-      $t.Subscription = $resumeXml
-      $t.Enabled = $true
-      $triggers += $t
-    } catch {
-      # Not fatal. The repeating trigger still covers a resume, just later.
-      Write-Log "resume trigger unavailable: $($_.Exception.Message)"
-    }
-    # No RepetitionDuration: omitted, it repeats indefinitely, which is what we
-    # want. [TimeSpan]::MaxValue looks like the way to say that but serialises
-    # to P99999999DT23H59M59S, which Task Scheduler rejects outright - and the
-    # whole registration fails with "value out of range".
-    $repeat = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) `
-      -RepetitionInterval (New-TimeSpan -Minutes 5)
-    $triggers += $repeat
-
-    $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
-      -DontStopOnIdleEnd -ExecutionTimeLimit ([TimeSpan]::Zero) `
-      -MultipleInstances IgnoreNew -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) `
-      -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-
-    Register-ScheduledTask -TaskName $script:TaskName -Action $action `
-      -Trigger $triggers -Settings $settings -Force -ErrorAction Stop | Out-Null
-
-    Write-Host '  Installed. Munim syncs continuously and starts itself at login.' -ForegroundColor Green
-    return
+    $resume = Get-CimClass -ClassName MSFT_TaskEventTrigger `
+      -Namespace Root/Microsoft/Windows/TaskScheduler -ErrorAction Stop
+    $t = New-CimInstance -CimClass $resume -ClientOnly
+    $t.Subscription = $resumeXml
+    $t.Enabled = $true
+    $triggers += $t
   } catch {
-    Write-Log "scheduled task refused ($($_.Exception.Message)); using Startup folder"
+    # Not fatal. The repeating trigger still covers a resume, just later.
+    Write-Log "resume trigger unavailable: $($_.Exception.Message)"
+  }
+
+  # No RepetitionDuration: omitted, it repeats indefinitely, which is what we
+  # want. [TimeSpan]::MaxValue looks like the way to say that but serialises to
+  # P99999999DT23H59M59S, which Task Scheduler rejects outright - and the whole
+  # registration fails with "value out of range".
+  $triggers += New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) `
+    -RepetitionInterval (New-TimeSpan -Minutes 5)
+
+  <#
+    With the boot trigger if we are allowed one, without it if we are not.
+
+    AtStartup is the only part that needs administrator rights, and losing it
+    costs a machine that reboots and waits at the login screen up to five
+    minutes - which the repeating trigger then covers anyway. Losing the task
+    altogether costs far more.
+  #>
+  $sets = @()
+  try { $sets += , ($triggers + (New-ScheduledTaskTrigger -AtStartup)) } catch { }
+  $sets += , $triggers
+
+  foreach ($set in $sets) {
+    try {
+      Register-ScheduledTask -TaskName $script:TaskName -Action $action `
+        -Trigger $set -Settings $settings -Force `
+        -Description 'Keeps this computer''s Tally data in sync with Munim. Reads Tally only.' `
+        -ErrorAction Stop | Out-Null
+
+      # Start it now, so the customer does not have to log out and back in.
+      try { Start-ScheduledTask -TaskName $script:TaskName -ErrorAction Stop } catch { }
+
+      <#
+        Proof that it actually started.
+
+        conhost --headless is the one unusual thing in this install, and a
+        silent failure here is the worst possible outcome: setup says
+        "Installed", nothing ever syncs, and the owner finds out days later
+        when their figures have not moved. If no watcher appears, re-register
+        the plain hidden-window action, which works everywhere.
+      #>
+      if (-not (Test-WatcherRunning 12)) {
+        Write-Log 'no watcher after starting the task; falling back to a hidden window'
+        $plain = New-ScheduledTaskAction `
+          -Execute (Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe') `
+          -Argument "-WindowStyle Hidden $psArgs"
+        try {
+          Register-ScheduledTask -TaskName $script:TaskName -Action $plain `
+            -Trigger $set -Settings $settings -Force `
+            -Description 'Keeps this computer''s Tally data in sync with Munim. Reads Tally only.' `
+            -ErrorAction Stop | Out-Null
+          try { Start-ScheduledTask -TaskName $script:TaskName -ErrorAction Stop } catch { }
+        } catch {
+          Write-Log "could not fall back to a hidden window: $($_.Exception.Message)"
+        }
+      }
+
+      Write-Host '  Installed. Munim syncs continuously and starts itself at login.' -ForegroundColor Green
+      return
+    } catch {
+      Write-Log "scheduled task refused ($($_.Exception.Message))"
+    }
   }
 
   <#
-    No admin, so no scheduled task. Two things instead, because a Startup
-    shortcut alone only fires at login - it does nothing if the watcher dies at
-    eleven in the morning.
+    Last resort: an ordinary shortcut in the Startup folder.
 
-      Startup folder  - starts it at every login, including after a reboot
-      Run registry    - the same, and survives the Startup folder being tidied
-
-    Plus a watchdog inside the launcher: if the watcher ever exits, it waits a
-    minute and starts it again, for as long as the machine is on. The mutex in
-    the watcher makes a duplicate harmless. A .vbs rather than the old .cmd, so
-    there is no minimised console sitting on the taskbar and nothing flashes.
+    Not a registry Run entry and not a restart loop. Both are persistence
+    patterns antivirus scores heavily, and neither buys much here: the shortcut
+    starts Munim at every login, and the watcher restarts itself for the rest
+    of the day.
   #>
-  $startup = $null
   try {
-    $startup = [Environment]::GetFolderPath('Startup')
-    # An earlier version kept a visible console loop here.
-    Remove-Item (Join-Path $startup 'Munim.cmd') -Force -ErrorAction SilentlyContinue
-    $vbsPath = Join-Path $startup 'Munim.vbs'
-    Write-HiddenLauncher $vbsPath $psArgs $true
-
-    # A second way in, in case the Startup folder is cleaned out.
-    try {
-      $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
-      Set-ItemProperty -Path $runKey -Name 'Munim' `
-        -Value ('wscript.exe //B //NoLogo "' + $vbsPath + '"') -ErrorAction Stop
-    } catch {
-      Write-Log "could not add the Run entry: $($_.Exception.Message)"
-    }
+    $lnk = Join-Path ([Environment]::GetFolderPath('Startup')) 'Munim.lnk'
+    $shell = New-Object -ComObject WScript.Shell
+    $cut = $shell.CreateShortcut($lnk)
+    $cut.TargetPath   = $launcher.Path
+    $cut.Arguments    = $launcher.Args
+    $cut.WindowStyle  = 7          # minimised, for the pre-1809 fallback
+    $cut.Description  = 'Munim - keeps Tally data in sync'
+    $cut.WorkingDirectory = $script:DataDir
+    $cut.Save()
 
     Write-Host '  Installed. Munim syncs continuously and starts itself at login.' -ForegroundColor Green
     Write-Host '  (Started from your Startup folder - no administrator needed.)' -ForegroundColor DarkGray
@@ -2224,48 +2263,77 @@ and EventID=1]]
   }
 
   # Start it now, so the customer does not have to log out and back in.
-  try {
-    Start-Process wscript.exe -ArgumentList "//B //NoLogo `"$vbsPath`"" | Out-Null
-  } catch { }
+  try { Start-Process -FilePath $launcher.Path -ArgumentList $launcher.Args | Out-Null } catch { }
 }
 
 <#
-  A tiny .vbs that starts PowerShell with no window at all.
+  How to start the watcher with no console window, without a script host.
 
-  With -Loop it keeps restarting the watcher a minute after it exits; without,
-  it waits for the watcher to finish, so the scheduled task stays "running" for
-  as long as the watcher does and IgnoreNew keeps meaning what it says.
+  powershell.exe is a console program: Windows creates its window before
+  -WindowStyle Hidden can hide it, which is the black box that used to flash on
+  the owner's screen every few minutes. conhost.exe --headless runs a console
+  program with no window at all. It ships with Windows and is signed by
+  Microsoft, so it replaces the wscript + .vbs launcher that antivirus treats -
+  fairly - as a red flag.
 
-  Written UTF-16 with a BOM, which wscript reads, so a Windows user name with
-  non-English letters in the path still works.
+  --headless arrived in Windows 10 1809 (build 17763). Anything older gets the
+  hidden window style, which flashes but works.
 #>
-function Write-HiddenLauncher([string]$path, [string]$psArgs, [bool]$loop) {
-  $command = ('powershell.exe ' + $psArgs).Replace('"', '""')
-  $lines = @(
-    "' Starts Munim in the background with no window. Delete this file to stop it.",
-    'Set sh = CreateObject("WScript.Shell")',
-    "cmd = `"$command`"",
-    'Do',
-    '  sh.Run cmd, 0, True'
-  )
-  if ($loop) {
-    $lines += '  WScript.Sleep 60000'
-    $lines += 'Loop'
-  } else {
-    $lines += 'Loop While False'
+function Get-WatchLauncher([string]$psArgs) {
+  if ([Environment]::OSVersion.Version.Build -ge 17763) {
+    return [pscustomobject]@{
+      Path = Join-Path $env:WINDIR 'System32\conhost.exe'
+      Args = "--headless powershell.exe $psArgs"
+    }
   }
-  ($lines -join "`r`n") | Set-Content -Path $path -Encoding Unicode
+  return [pscustomobject]@{
+    Path = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
+    Args = "-WindowStyle Hidden $psArgs"
+  }
+}
+
+<#
+  Is a watcher actually running?
+
+  Asked of the process table rather than of Task Scheduler: a task can report
+  "Running" while the program it started has already exited, and what matters
+  here is whether Tally is being read.
+#>
+function Test-WatcherRunning([int]$timeoutSeconds) {
+  $until = (Get-Date).AddSeconds($timeoutSeconds)
+  do {
+    $running = @(Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue |
+      Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -like '*Munim-Connector*watch*' })
+    if ($running.Count) { return $true }
+    Start-Sleep -Seconds 2
+  } while ((Get-Date) -lt $until)
+  return $false
+}
+
+<#
+  Every way older versions started Munim.
+
+  Cleared on install as well as on uninstall: a machine that upgrades has to
+  stop looking like the thing antivirus objected to, rather than keep the .vbs
+  and the Run entry sitting there beside the new task.
+#>
+function Remove-LegacyStarters {
+  $startup = [Environment]::GetFolderPath('Startup')
+  foreach ($f in @((Join-Path $startup 'Munim.cmd'),
+                   (Join-Path $startup 'Munim.vbs'),
+                   (Join-Path $script:DataDir 'Munim-Start.vbs'))) {
+    Remove-Item $f -Force -ErrorAction SilentlyContinue
+  }
+  Remove-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' `
+    -Name 'Munim' -ErrorAction SilentlyContinue
 }
 
 function Uninstall-Task {
   # Remove every way it starts, since any of them could have been used.
   Unregister-ScheduledTask -TaskName $script:TaskName -Confirm:$false -ErrorAction SilentlyContinue
-  $startup = [Environment]::GetFolderPath('Startup')
-  Remove-Item (Join-Path $startup 'Munim.cmd') -Force -ErrorAction SilentlyContinue
-  Remove-Item (Join-Path $startup 'Munim.vbs') -Force -ErrorAction SilentlyContinue
-  Remove-Item (Join-Path $script:DataDir 'Munim-Start.vbs') -Force -ErrorAction SilentlyContinue
-  Remove-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' `
-    -Name 'Munim' -ErrorAction SilentlyContinue
+  Remove-Item (Join-Path ([Environment]::GetFolderPath('Startup')) 'Munim.lnk') `
+    -Force -ErrorAction SilentlyContinue
+  Remove-LegacyStarters
 
   <#
     The looping launcher first, or it starts the watcher again a minute later.

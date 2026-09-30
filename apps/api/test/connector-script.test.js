@@ -138,14 +138,34 @@ test('every function the script calls is one it defines', () => {
  * Skipped rather than failed where PowerShell is absent - a Linux CI box should
  * not fail a build over a Windows binary it was never going to have.
  */
+/**
+ * Any PowerShell this machine has, or null.
+ *
+ * Windows PowerShell through WSL first, since that is the parser the customer
+ * actually runs. Otherwise pwsh from PATH: a Mac or a Linux CI box with
+ * PowerShell installed should run these checks rather than skip them, and the
+ * syntax they are looking for is the same in both.
+ */
+function anyPowerShell() {
+  const wsl = '/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe';
+  if (fs.existsSync(wsl)) return wsl;
+  try {
+    const { execFileSync } = require('child_process');
+    return execFileSync('command', ['-v', 'pwsh'], { encoding: 'utf8', shell: true }).trim() || null;
+  } catch {
+    return null;
+  }
+}
+
 test('the script parses under PowerShell itself', (t) => {
   const { execFileSync } = require('child_process');
-  const ps = '/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe';
-  if (!fs.existsSync(ps)) return t.skip('PowerShell is not reachable from here');
+  const ps = anyPowerShell();
+  if (!ps) return t.skip('PowerShell is not reachable from here');
 
   // The script lives on the Windows filesystem; hand the parser a Windows path.
-  const winPath = SCRIPT.replace(/^\/mnt\/([a-z])\//, (_, d) => `${d.toUpperCase()}:\\`)
-    .replace(/\//g, '\\');
+  const winPath = ps.startsWith('/mnt/')
+    ? SCRIPT.replace(/^\/mnt\/([a-z])\//, (_, d) => `${d.toUpperCase()}:\\`).replace(/\//g, '\\')
+    : SCRIPT;
 
   const out = execFileSync(ps, ['-NoProfile', '-NonInteractive', '-Command', `
     $tokens = $null; $errors = $null
@@ -178,10 +198,10 @@ test('the script parses under PowerShell itself', (t) => {
  * script to a file and parsing the file reports PARSE OK for content that
  * cannot run. Which is what happened.
  */
-test('the personalised script parses the way iex will run it', (t) => {
+test('the personalised script parses the way it is served', (t) => {
   const { execFileSync } = require('child_process');
-  const ps = '/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe';
-  if (!fs.existsSync(ps)) return t.skip('PowerShell is not reachable from here');
+  const ps = anyPowerShell();
+  if (!ps) return t.skip('PowerShell is not reachable from here');
 
   const installer = require('../src/routes/installer');
   const personalised = installer.personalise(
@@ -209,8 +229,9 @@ test('the personalised script parses the way iex will run it', (t) => {
   fs.writeFileSync(tmp, Buffer.from(personalised, 'utf8').toString('base64'), 'ascii');
   let out;
   try {
-    const winTmp = tmp.replace(/^\/mnt\/([a-z])\//, (_, d) => `${d.toUpperCase()}:\\`)
-      .replace(/\//g, '\\');
+    const winTmp = ps.startsWith('/mnt/')
+      ? tmp.replace(/^\/mnt\/([a-z])\//, (_, d) => `${d.toUpperCase()}:\\`).replace(/\//g, '\\')
+      : tmp;
     out = execFileSync(ps, ['-NoProfile', '-NonInteractive', '-Command', `
       $b64 = [System.IO.File]::ReadAllText('${winTmp}')
       $text = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($b64))
@@ -317,20 +338,71 @@ test('the scheduled task covers all four ways a shop PC comes back', () => {
 test('the background watcher never opens a window', () => {
   /*
    * powershell.exe is a console program: Windows opens its window before
-   * -WindowStyle Hidden can hide it. Every five-minute retry flashed a terminal
-   * open and shut on the owner's screen. Everything that starts the watcher
-   * automatically must go through wscript.exe instead.
+   * -WindowStyle Hidden can hide it, so every retry flashed a terminal open and
+   * shut on the owner's screen. conhost --headless opens none - and unlike the
+   * wscript + .vbs launcher it replaced, it is part of Windows.
    */
   const install = src.slice(src.indexOf('function Install-Task'),
-                            src.indexOf('function Uninstall-Task'));
-  assert.match(install, /New-ScheduledTaskAction -Execute 'wscript\.exe'/);
+                            src.indexOf('function Remove-LegacyStarters'));
+  assert.match(src, /--headless powershell\.exe/);
   assert.ok(!/New-ScheduledTaskAction -Execute 'powershell\.exe'/.test(install),
     'the scheduled task starts a console window');
-  assert.ok(!/Start-Process powershell\.exe/.test(install),
-    'starting the watcher after install flashes a console window');
   assert.ok(!/cmd\.exe \/c start/.test(install),
     'the Run entry starts a console window');
-  assert.match(install, /sh\.Run cmd, 0, True/, 'the launcher does not hide PowerShell');
+});
+
+/**
+ * Comments stripped, string literals kept.
+ *
+ * Not the module-level codeOnly, which blanks strings too: these tests are
+ * looking for a path like 'Munim.vbs' written INTO the code, and that lives in
+ * a string literal. Only the prose describing it has to go.
+ */
+function withoutComments(text) {
+  return text.replace(/<#[\s\S]*?#>/g, '').replace(/^\s*#.*$/gm, '');
+}
+
+test('nothing in the install looks like malware persistence', () => {
+  /*
+   * Why this test exists: antivirus blocked the install outright. A .vbs
+   * launcher, an HKCU Run entry and a loop restarting a hidden PowerShell are
+   * what commodity malware does to survive a reboot, and Defender, Quick Heal
+   * and K7 all score them. A scheduled task is the documented way to do this,
+   * and the one thing here that must stay.
+   */
+  const install = withoutComments(src.slice(src.indexOf('function Install-Task'),
+                                            src.indexOf('function Remove-LegacyStarters')));
+  assert.ok(!/\.vbs/.test(install), 'the installer writes a script file to start itself');
+  assert.ok(!/wscript\.exe/i.test(install), 'the installer starts itself through a script host');
+  assert.ok(!/Set-ItemProperty[^\n]*CurrentVersion.Run/.test(install),
+    'the installer adds a registry Run entry');
+  assert.ok(!/goto loop/i.test(install), 'the installer leaves a restart loop running');
+  assert.match(install, /Register-ScheduledTask/);
+});
+
+test('an upgrade clears what the old version left behind', () => {
+  // Otherwise the .vbs and the Run entry stay on the machine beside the new
+  // task, and the machine still looks to antivirus like the thing it flagged.
+  const legacy = src.slice(src.indexOf('function Remove-LegacyStarters'));
+  assert.match(legacy, /Munim\.vbs/);
+  assert.match(legacy, /Munim\.cmd/);
+  assert.match(legacy, /Remove-ItemProperty[\s\S]{0,120}CurrentVersion.Run/);
+  const install = src.slice(src.indexOf('function Install-Task'),
+                            src.indexOf('function Get-WatchLauncher'));
+  assert.match(install, /Remove-LegacyStarters/, 'install never clears the old starters');
+});
+
+test('a machine without administrator rights still gets the task', () => {
+  /*
+   * AtStartup is the only trigger that needs elevation. Registering the whole
+   * task or nothing is what pushed non-admin machines onto the Startup-folder
+   * fallback - the very thing antivirus objects to.
+   */
+  const install = src.slice(src.indexOf('function Install-Task'),
+                            src.indexOf('function Get-WatchLauncher'));
+  const sets = install.indexOf('$sets +=');
+  assert.ok(sets >= 0, 'there is no second attempt without the boot trigger');
+  assert.match(install.slice(sets), /foreach \(\$set in \$sets\)/);
 });
 
 test('uninstall can actually find the running watcher', () => {
@@ -339,7 +411,8 @@ test('uninstall can actually find the running watcher', () => {
                               src.indexOf('function Show-Status'));
   assert.ok(!/^\s*Get-Process\b/m.test(uninstall), 'Get-Process cannot filter on CommandLine');
   assert.match(uninstall, /Get-CimInstance Win32_Process/);
-  assert.match(uninstall, /wscript\.exe/, 'the looping launcher restarts the watcher');
+  assert.match(uninstall, /Remove-LegacyStarters/, 'an older install is left running');
+  assert.match(uninstall, /Munim\.lnk/, 'the Startup shortcut is left behind');
 });
 
 test('an idle pass does not export every ledger and item again', () => {

@@ -260,3 +260,61 @@ to decide whether Next is enabled.
       binaries aggressively
 - [ ] Add the offline spool (BoltDB) before real customers: the connector
       currently has no crash-safe queue if the internet drops mid-batch
+
+---
+
+## Antivirus: why it blocked the install, and what changed
+
+A customer's antivirus refused the install outright. Nothing was wrong with the
+connector — it was the *shape* of what the installer did. Three things in
+particular are what commodity malware does, and every scanner scores them:
+
+| What it did | Why it is flagged |
+|---|---|
+| `iwr -useb <url> \| iex` in the `.bat` | A download cradle: code that runs without ever touching the disk, so it cannot be scanned |
+| Wrote `Munim.vbs` into the Startup folder | A script file that starts itself at login is the classic persistence trick |
+| Added `HKCU\...\CurrentVersion\Run` | The other classic. Two of them together reads as "trying hard to survive a reboot" |
+| A `.cmd` loop restarting a hidden PowerShell every 60s | Watchdog behaviour, on top of the two above |
+
+None of that was necessary. The installer now:
+
+- **Downloads the script to a file**, runs `Unblock-File`, then runs the file.
+  It can be scanned like anything else, and the customer can read it first.
+- **Installs one scheduled task and nothing else.** A task is the documented
+  way to keep a program running, and it is what a scanner expects to see.
+- **Registers without the `AtStartup` trigger** when there are no admin rights,
+  instead of falling back to the Startup folder. Only that one trigger needs
+  elevation, so a normal user account still gets a proper task.
+- **Starts the watcher with `conhost.exe --headless`**, which ships with
+  Windows and is signed by Microsoft, in place of `wscript.exe` plus a `.vbs`.
+  No window appears. On Windows older than 10 1809 it falls back to a hidden
+  window, and if no watcher appears within 12 seconds the task is re-registered
+  with that plain action, so a machine is never left silently not syncing.
+- **Clears the old `.vbs`, `.cmd` and Run entry on upgrade**, so a machine that
+  already has them stops matching the pattern.
+- **Leaves a Startup shortcut (`.lnk`) as the last resort only** — no registry
+  entry, no loop.
+
+### What is still not solved
+
+The `.bat` and the `.ps1` are **unsigned**, so:
+
+- Windows shows SmartScreen's "Windows protected your PC" box on the first run.
+  The customer has to choose **More info → Run anyway**.
+- An aggressive scanner may still quarantine on reputation alone, particularly
+  Quick Heal and K7, which are common in Indian shops.
+
+The only real fixes, in order of cost:
+
+1. **Buy a code-signing certificate** and sign the `.ps1` with
+   `Set-AuthenticodeSignature`. An OV certificate is roughly ₹15–25k a year and
+   earns reputation over weeks; an EV one is more and clears SmartScreen at
+   once. This is the answer for a product that ships to strangers.
+2. **Submit a false-positive report** to whichever vendor blocked it. Microsoft
+   takes them at the Microsoft Security Intelligence portal, and usually turns
+   a fix around in a day or two. Quick Heal and K7 have their own forms.
+3. **Ask the customer to allow the folder**, `%ProgramData%\Munim`, as an
+   exclusion. This works today and needs nothing from us, but asking a shop
+   owner to add an antivirus exclusion is asking them to lower a defence — fine
+   for a pilot customer you are on the phone with, not something to put in a
+   public install guide.

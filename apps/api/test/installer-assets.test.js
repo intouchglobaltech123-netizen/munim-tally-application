@@ -63,3 +63,19 @@ test('nothing above apps/api is required to serve the installer', () => {
     'the shipped script must be under apps/api');
   assert.ok(fs.existsSync(inside));
 });
+
+test('the downloaded file does not pipe remote code into iex', () => {
+  /*
+   * `iwr | iex` runs code that never lands on disk. That is a download cradle,
+   * the pattern antivirus is most confident about, and it blocked the install
+   * on real customer machines. The script is fetched to a file, unblocked and
+   * run from there, so it can be scanned - and read - like any other program.
+   */
+  const routeSrc = fs.readFileSync(
+    path.join(__dirname, '..', 'src', 'routes', 'installer.js'), 'utf8');
+  const bat = routeSrc.slice(routeSrc.indexOf('function buildInstaller'),
+                             routeSrc.indexOf('const filename ='));
+  assert.ok(!/\|\s*iex/.test(bat), 'the .bat still pipes the script into iex');
+  assert.match(bat, /-OutFile/);
+  assert.match(bat, /Unblock-File/);
+});

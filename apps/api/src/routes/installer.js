@@ -272,18 +272,37 @@ function buildInstaller(ctx, s, code) {
     'echo.',
     'pause',
     '',
+    ':: Saved to a file and run from there - never piped into iex.',
+    '::',
+    ':: Piping a download straight into the interpreter runs code that never',
+    ':: touches the disk - a download cradle. Defender, Quick Heal and K7 all',
+    ':: stop that, and rightly,',
+    ':: and the customer is shown a threat warning for software they asked',
+    ':: for. A file on disk is scanned the ordinary way, and can be read by',
+    ':: anyone who wants to see what it does before it runs.',
+    '::',
     ':: Bypass applies to this one process only - nothing on the machine is',
     ':: changed, and Windows never prompts.',
     ':: The catch shows the REAL error. An earlier version blamed the internet',
     ':: for everything, which sent people to fix the wrong thing.',
     'powershell -NoProfile -ExecutionPolicy Bypass -Command ' +
-      `"try { iwr -useb '${url}' | iex } catch { ` +
+      '"$ErrorActionPreference = \'Stop\'; try { ' +
+      '$d = Join-Path $env:LOCALAPPDATA \'Munim\'; ' +
+      'New-Item -ItemType Directory -Force -Path $d | Out-Null; ' +
+      '$f = Join-Path $d \'Munim-Setup.ps1\'; ' +
+      `Invoke-WebRequest -UseBasicParsing -Uri '${url}' -OutFile $f; ` +
+      // Clears the mark Windows puts on a downloaded file, which otherwise
+      // makes PowerShell refuse it under any policy stricter than Bypass.
+      'Unblock-File -Path $f; ' +
+      '& $f } catch { ' +
       'Write-Host \'\'; ' +
       'Write-Host \'  Setup could not finish.\' -ForegroundColor Red; ' +
       'Write-Host \'\'; ' +
       'Write-Host (\'  \' + $_.Exception.Message) -ForegroundColor Yellow; ' +
       'Write-Host \'\'; ' +
       'Write-Host \'  If this mentions the network, check this computer is online.\' -ForegroundColor DarkGray; ' +
+      'Write-Host \'  If it mentions a threat or a virus, your antivirus stopped\' -ForegroundColor DarkGray; ' +
+      'Write-Host \'  Munim. Allow it, then run this file again.\' -ForegroundColor DarkGray; ' +
       'Write-Host \'  If it mentions permission, right-click this file and\' -ForegroundColor DarkGray; ' +
       'Write-Host \'  choose Run as administrator.\' -ForegroundColor DarkGray; ' +
       'Write-Host \'\'; ' +
