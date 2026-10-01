@@ -45,6 +45,48 @@ export default function ConnectPage() {
   const [approved, setApproved] = useState(false);
   const [approveErr, setApproveErr] = useState<string | null>(null);
 
+  /*
+   * The same steps, as plain text.
+   *
+   * The person who has to do this is usually not the person reading this page:
+   * it is whoever sits at the shop computer, reached over WhatsApp. Reading
+   * five steps down a phone call is how they get done wrong, so they are
+   * copyable instead.
+   */
+  const STEPS = [
+    'Munim setup on the Tally computer',
+    '',
+    '1. Open K7 (or Quick Heal) > Settings > Real Time Protection',
+    '   > Click Here to Manage Exclusions.',
+    '2. Add Entry > Add Folder > C:\\ProgramData\\Munim',
+    '   Tick "Include Subfolders", then OK.',
+    '   Do the same for the Downloads folder.',
+    '3. Open the Munim website > Connect your Tally >',
+    '   "Download the plain script (.ps1)".',
+    '4. Click Start, type powershell, press Enter, then paste this line:',
+    '',
+    '   powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\\Downloads\\Munim-Connector.ps1" setup',
+    '',
+    '5. Type the licence key when it asks (MUNM-XXXX-XXXX-XXXX).',
+    '6. It shows a code. Send me that code and I will approve it.',
+    '',
+    'Keep Tally open while this runs. Munim only reads Tally -',
+    'it cannot change or delete anything in your books.',
+  ].join('\n');
+
+  const [copied, setCopied] = useState(false);
+
+  async function copySteps() {
+    try {
+      await navigator.clipboard.writeText(STEPS);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // Clipboard refused (an insecure origin, or an old browser). Selecting
+      // the text by hand still works, so this is not worth an error message.
+    }
+  }
+
   async function approve() {
     setApproveErr(null); setApproving(true);
     try {
@@ -283,6 +325,15 @@ export default function ConnectPage() {
                 Folders. Munim only ever reads Tally — it cannot change your
                 books, and you can disconnect it from <b>Devices</b> at any time.
               </p>
+
+              <div className="mt-3 flex items-center gap-2">
+                <Button variant="ghost" onClick={copySteps}>
+                  {copied ? 'Copied' : 'Copy these steps'}
+                </Button>
+                <span className="text-xs text-muted">
+                  Send them to whoever is at the Tally computer.
+                </span>
+              </div>
             </details>
           </Card>
 
