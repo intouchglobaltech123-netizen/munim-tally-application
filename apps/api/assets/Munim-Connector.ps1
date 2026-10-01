@@ -38,7 +38,23 @@ param(
   # Every AlterID poll is one small request that returns nothing when nothing
   # changed, so a short interval is cheap. 3s means a voucher saved in Tally is
   # on the owner's phone about as fast as they can look at it.
-  [int]$IntervalSeconds = 3
+  [int]$IntervalSeconds = 3,
+
+  <#
+    Set up, but install nothing that stays behind.
+
+    The one thing antivirus objects to hardest is persistence: a downloaded
+    script that registers a scheduled task so it runs again tomorrow is the
+    shape of malware, and on a machine running K7 or Quick Heal that is often
+    what gets the file quarantined rather than anything it does to Tally.
+
+    With this switch the connector pairs, syncs and then keeps syncing in the
+    window it was started from - nothing is written to Task Scheduler, the
+    Startup folder or the registry. Close the window and it stops. That makes
+    it the honest way to try Munim on a machine whose antivirus is unhappy, or
+    beside another accounting tool, without installing anything.
+  #>
+  [switch]$NoInstall
 )
 
 $ErrorActionPreference = 'Stop'
@@ -2484,6 +2500,26 @@ switch ($Command) {
     $named = @(Register-Companies $cfg)
     Write-Host "  Syncing $($named.Count) book(s): $(($named | ForEach-Object { $_.Name }) -join ', ')"
     Invoke-Sync $cfg
+
+    if ($NoInstall) {
+      <#
+        Nothing left behind, and say so plainly.
+
+        Somebody who passed -NoInstall is usually working around their own
+        antivirus or trying Munim out, and the thing they must not be allowed
+        to believe is that syncing continues after they close the window.
+      #>
+      Write-Host ''
+      Write-Host '  Set up, and nothing was installed on this computer.' -ForegroundColor Green
+      Write-Host '  Munim syncs only while this window stays open:' -ForegroundColor Yellow
+      Write-Host ''
+      Write-Host "      powershell -ExecutionPolicy Bypass -File `"$PSCommandPath`" watch" -ForegroundColor DarkGray
+      Write-Host ''
+      Write-Host '  Starting now. Press Ctrl+C to stop.' -ForegroundColor Cyan
+      Invoke-Watch $cfg
+      break
+    }
+
     Install-Task
 
     Write-Host ''
