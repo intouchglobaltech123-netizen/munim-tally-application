@@ -337,6 +337,61 @@ export default function ConnectPage() {
             </details>
           </Card>
 
+          {/*
+            * The way out when the Tally PC's antivirus will not be reasoned
+            * with at all.
+            *
+            * Tally's gateway listens on the network, not only on its own
+            * machine, so the connector does not have to live on the computer
+            * that runs Tally. Put it on any other Windows machine on the same
+            * network and the protected PC has nothing installed on it, nothing
+            * downloaded to it, and nothing for its antivirus to object to.
+            */}
+          <Card>
+            <h3 className="text-sm font-semibold">
+              If that computer still refuses
+            </h3>
+            <p className="mt-2 text-sm text-body">
+              Munim does not have to run on the Tally computer. It can run on
+              any other Windows computer on the same network and read Tally
+              across it. Nothing is installed on the Tally machine at all.
+            </p>
+            <ol className="mt-3 space-y-1.5 text-sm text-body">
+              <li>
+                1. On the <b>Tally computer</b>: Start → type{' '}
+                <code className="rounded bg-line-soft px-1">cmd</code> → run{' '}
+                <code className="rounded bg-line-soft px-1">ipconfig</code> and
+                note the <b>IPv4 Address</b>, e.g. 192.168.1.50. Leave Tally
+                open.
+              </li>
+              <li>
+                2. Still there, allow the port once, in an{' '}
+                <b>Administrator</b> command window:
+                <code className="mt-1 block overflow-x-auto rounded bg-line-soft px-2 py-1 text-xs">
+                  netsh advfirewall firewall add rule name=&quot;Tally
+                  gateway&quot; dir=in action=allow protocol=TCP localport=9000
+                </code>
+                <span className="mt-1 block text-xs text-muted">
+                  If K7 runs its own firewall, allow port 9000 there too.
+                </span>
+              </li>
+              <li>
+                3. On the <b>other computer</b>: download the plain script and
+                run it, pointing at that address:
+                <code className="mt-1 block overflow-x-auto rounded bg-line-soft px-2 py-1 text-xs">
+                  powershell -ExecutionPolicy Bypass -File
+                  &quot;$env:USERPROFILE\Downloads\Munim-Connector.ps1&quot;
+                  setup -Tally http://192.168.1.50:9000
+                </code>
+              </li>
+            </ol>
+            <p className="mt-3 text-xs text-muted">
+              That second computer has to be switched on for syncing to
+              continue, and both must be on the same office network. Any
+              ordinary Windows PC or laptop will do.
+            </p>
+          </Card>
+
           <Card>
             <h3 className="text-sm font-semibold">If Windows warns you</h3>
             <p className="mt-2 text-sm text-body">
