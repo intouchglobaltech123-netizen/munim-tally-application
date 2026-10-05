@@ -54,7 +54,26 @@ param(
     it the honest way to try Munim on a machine whose antivirus is unhappy, or
     beside another accounting tool, without installing anything.
   #>
-  [switch]$NoInstall
+  [switch]$NoInstall,
+
+  <#
+    Keep everything in one folder - the one the customer already allowed.
+
+    The sticking point with a fussy antivirus was never the setup, it was the
+    exclusion before it: K7 refuses to allow a folder that does not exist yet,
+    and the connector's usual home (C:\ProgramData\Munim) does not exist until
+    it has run once. Chicken and egg.
+
+    -DataHome breaks it. Point it at a folder that already exists - the
+    customer's Downloads, which they allow in one click with nothing to create -
+    and the connector keeps its settings, its logs and, when installed, its own
+    copy of this script all inside that one allowed folder. Nothing is ever
+    written anywhere the antivirus has not already been told is fine.
+
+    It is carried into the background task too, so the watcher uses the same
+    home the setup did rather than falling back to ProgramData.
+  #>
+  [string]$DataHome
 )
 
 $ErrorActionPreference = 'Stop'
@@ -140,7 +159,14 @@ function Resolve-DataDir {
   }
 }
 
-$script:DataDir = Resolve-DataDir
+$script:DataDir = if ($DataHome) {
+  # The customer's choice wins, and is created if need be - it is always a
+  # folder they have already allowed, so creating it here is safe and silent.
+  try { New-Item -ItemType Directory -Force -Path $DataHome -ErrorAction Stop | Out-Null } catch { }
+  $DataHome
+} else {
+  Resolve-DataDir
+}
 $script:ConfigPath = Join-Path $script:DataDir 'config.json'
 $script:CursorPath = Join-Path $script:DataDir 'cursors.json'
 $script:LogPath = Join-Path $script:DataDir 'connector.log'
@@ -2110,7 +2136,11 @@ function Install-Task {
   # invoice, looks at their phone, and sees nothing. This runs one long-lived
   # watcher instead, polling AlterID every few seconds - cheap, because a poll
   # with no changes returns nothing.
-  $psArgs = "-NoProfile -ExecutionPolicy Bypass -File `"$script`" watch"
+  # The watcher runs in a fresh process with none of this setup's environment,
+  # so a chosen -DataHome has to be handed to it explicitly or it would fall
+  # back to ProgramData and look for a pairing that lives in the other folder.
+  $homeArg = if ($DataHome) { " -DataHome `"$($script:DataDir)`"" } else { '' }
+  $psArgs = "-NoProfile -ExecutionPolicy Bypass -File `"$script`" watch$homeArg"
 
   # Whatever an older version of Munim left behind. See Remove-LegacyStarters.
   Remove-LegacyStarters

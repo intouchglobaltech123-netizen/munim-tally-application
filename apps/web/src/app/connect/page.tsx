@@ -58,14 +58,15 @@ export default function ConnectPage() {
     '',
     '1. Open K7 (or Quick Heal) > Settings > Real Time Protection',
     '   > Click Here to Manage Exclusions.',
-    '2. Add Entry > Add Folder > C:\\ProgramData\\Munim',
-    '   Tick "Include Subfolders", then OK.',
-    '   Do the same for the Downloads folder.',
-    '3. Open the Munim website > Connect your Tally >',
+    '2. Add Entry > Add Folder > browse to the Downloads folder',
+    '   (This PC > Downloads). Tick "Include Subfolders", then OK.',
+    '   (The Downloads folder already exists, so K7 accepts it.',
+    '    Everything Munim needs stays inside it.)',
+    '3. On the Munim website > Connect your Tally >',
     '   "Download the plain script (.ps1)".',
-    '4. Click Start, type powershell, press Enter, then paste this line:',
+    '4. Click Start, type powershell, press Enter, then paste this ONE line:',
     '',
-    '   powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\\Downloads\\Munim-Connector.ps1" setup',
+    '   powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\\Downloads\\Munim-Connector.ps1" setup -DataHome "$env:USERPROFILE\\Downloads\\Munim"',
     '',
     '5. Type the licence key when it asks (MUNM-XXXX-XXXX-XXXX).',
     '6. It shows a code. Send me that code and I will approve it.',
@@ -299,21 +300,36 @@ export default function ConnectPage() {
               </summary>
               <p className="mt-2 text-sm text-body">
                 They quarantine this kind of file on sight, whoever made it.
-                Allow the folder before you download and the install just works:
+                Allow <b>one folder that already exists</b> — your Downloads —
+                and keep everything inside it. Then the install just works:
               </p>
-              <ol className="mt-2 space-y-1 text-sm text-body">
+              <ol className="mt-2 space-y-1.5 text-sm text-body">
                 <li>
                   1. Open <b>K7</b> → <b>Settings</b> → <b>Real Time
                   Protection</b> → <b>Click Here to Manage Exclusions</b>.
                 </li>
                 <li>
-                  2. <b>Add Entry</b> → <b>Add Folder</b> →{' '}
-                  <code className="rounded bg-line-soft px-1">C:\ProgramData\Munim</code>,
-                  tick <b>Include Subfolders</b>, then <b>OK</b>.
+                  2. <b>Add Entry</b> → <b>Add Folder</b> → browse to your{' '}
+                  <b>Downloads</b> folder (This PC → Downloads), tick{' '}
+                  <b>Include Subfolders</b>, then <b>OK</b>.
+                  <span className="mt-1 block text-xs text-muted">
+                    Downloads already exists, so K7 accepts it — no &quot;not a
+                    valid folder&quot; error, and nothing to create first.
+                  </span>
                 </li>
                 <li>
-                  3. Do the same for your <b>Downloads</b> folder, then download
-                  again.
+                  3. Download the plain script (button above), then in{' '}
+                  <b>PowerShell</b> paste this one line:
+                  <code className="mt-1 block overflow-x-auto rounded bg-line-soft px-2 py-1 text-xs">
+                    powershell -ExecutionPolicy Bypass -File
+                    &quot;$env:USERPROFILE\Downloads\Munim-Connector.ps1&quot;
+                    setup -DataHome &quot;$env:USERPROFILE\Downloads\Munim&quot;
+                  </code>
+                  <span className="mt-1 block text-xs text-muted">
+                    The <code className="rounded bg-line-soft px-1">-DataHome</code>{' '}
+                    part keeps every Munim file inside the Downloads folder you
+                    just allowed, so nothing ever lands where K7 would see it.
+                  </span>
                 </li>
               </ol>
               <p className="mt-2 text-sm text-body">

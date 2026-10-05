@@ -478,3 +478,21 @@ test('proof of life is written by work, not by existing', () => {
   const loop = watch.slice(watch.indexOf('while ($true)'));
   assert.match(loop, /Set-Content -Path \$aliveFile/);
 });
+
+test('everything can live in one already-allowed folder', () => {
+  /*
+   * The antivirus exclusion must point at a folder that exists, and ProgramData
+   * Munim does not exist until the connector has run once - chicken and egg,
+   * which is what gave K7 the "not a valid folder" error. -DataHome lets setup
+   * keep its files inside a folder that already exists (the customer's
+   * Downloads), so there is one folder to allow and nothing to create.
+   */
+  assert.match(src, /\[string\]\$DataHome/, 'no -DataHome parameter');
+  // It has to override where state lives...
+  assert.match(src, /if \(\$DataHome\)/, 'DataHome is accepted but never used');
+  // ...and be handed to the background watcher, or the task would fall back to
+  // ProgramData and lose the pairing stored under DataHome.
+  const install = src.slice(src.indexOf('function Install-Task'),
+                            src.indexOf('function Get-WatchLauncher'));
+  assert.match(install, /DataHome/, 'the watcher is not told which home to use');
+});
