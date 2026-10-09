@@ -511,3 +511,30 @@ test('Tally UDF fields do not break the whole sync', () => {
   const invoke = src.slice(src.indexOf('function Invoke-Tally'), src.indexOf('function Invoke-Tally') + 600);
   assert.ok(!/return \[xml\]\$clean/.test(invoke), 'Invoke-Tally still uses the strict [xml] cast');
 });
+
+test('setup checks its pairing against a connector endpoint, not a user one', () => {
+  /*
+   * GET /v1/connectors needs a signed-in USER - a device token can never pass
+   * it, so the old check returned 401 every run and wiped a good pairing,
+   * forcing a needless re-pair. The probe must be an endpoint a connector may
+   * call (heartbeat), and only a real auth rejection may clear the pairing.
+   */
+  // The probe lives in the setup command; assert on the whole script since
+  // 'sync' appears earlier as a command kind and breaks a naive slice.
+  assert.match(src, /connectors\/heartbeat/, 'pairing is probed on heartbeat');
+  assert.ok(!/'\/v1\/connectors'\s+'GET'/.test(src),
+    'still probing the user-only /v1/connectors endpoint with a device token');
+  assert.match(src, /not paired\|sign in again/, 'clears the pairing on any error, not just auth');
+});
+
+test('pairing never claims success without a device token', () => {
+  /*
+   * A pairing code is single-use. Polling an already-used code returns
+   * approved=true but no token; saving that empty token and printing
+   * "Connected" produced a connector that the next call rejects as not paired.
+   */
+  const pair = src.slice(src.indexOf('function Invoke-Pair'), src.indexOf('function Register-Companies'));
+  const approvedBlocks = (pair.match(/if \(\$poll\.approved\) \{/g) || []).length;
+  const guards = (pair.match(/if \(-not \$poll\.deviceToken\)/g) || []).length;
+  assert.equal(guards, approvedBlocks, 'every approved branch guards against an empty token');
+});

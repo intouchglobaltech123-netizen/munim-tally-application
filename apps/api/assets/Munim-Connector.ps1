@@ -1123,6 +1123,10 @@ function Invoke-Pair($cfg) {
       return $false
     }
     if ($poll.approved) {
+      if (-not $poll.deviceToken) {
+        Write-Host "`n  This setup link was already used. Download a fresh setup file from Munim and run it again." -ForegroundColor Yellow
+        return $false
+      }
       $cfg.deviceToken = $poll.deviceToken
       $cfg.connectorId = $poll.connectorId
       $cfg.orgName     = $poll.orgName
@@ -1140,6 +1144,10 @@ function Invoke-Pair($cfg) {
       $poll = Invoke-Cloud $cfg "/v1/auth/intent?id=$Code"
       if ($poll.expired) { Write-Host "`n  That link expired." -ForegroundColor Yellow; return $false }
       if ($poll.approved) {
+        if (-not $poll.deviceToken) {
+          Write-Host "`n  This setup link was already used. Download a fresh setup file from Munim and run it again." -ForegroundColor Yellow
+          return $false
+        }
         $cfg.deviceToken = $poll.deviceToken
         $cfg.connectorId = $poll.connectorId
         $cfg.orgName     = $poll.orgName
@@ -1176,6 +1184,10 @@ function Invoke-Pair($cfg) {
     $poll = Invoke-Cloud $cfg "/v1/auth/intent?id=$($intent.intentId)"
     if ($poll.expired) { Write-Host "`n  That code expired. Run pair again." -ForegroundColor Yellow; return $false }
     if ($poll.approved) {
+      if (-not $poll.deviceToken) {
+        Write-Host "`n  This setup link was already used. Download a fresh setup file from Munim and run it again." -ForegroundColor Yellow
+        return $false
+      }
       $cfg.deviceToken = $poll.deviceToken
       $cfg.connectorId = $poll.connectorId
       $cfg.orgName = $poll.orgName
@@ -2526,16 +2538,34 @@ switch ($Command) {
       One cheap check settles it, and re-pairing is the fix.
     #>
     if ($cfg.deviceToken) {
+      <#
+        Is the stored pairing still good? Ask an endpoint a CONNECTOR is allowed
+        to call.
+
+        This used to GET /v1/connectors, which is a signed-in USER's endpoint -
+        a device token can never satisfy it, so it returned 401 every single
+        time and setup wiped a perfectly good pairing on every run, forcing a
+        needless re-pair. The heartbeat is the connector's own endpoint: a valid
+        token returns 200, and only a genuinely rejected one throws.
+
+        And only an auth rejection re-pairs. A network blip must never be read as
+        "your account is gone" - that would throw away a working pairing because
+        the shop's internet hiccuped.
+      #>
       try {
-        Invoke-Cloud $cfg '/v1/connectors' 'GET' $null $cfg.deviceToken | Out-Null
+        Invoke-Cloud $cfg '/v1/connectors/heartbeat' 'POST' @{ status = 'setup' } $cfg.deviceToken | Out-Null
       } catch {
-        Write-Host '  This computer was linked to an account that no longer exists.' -ForegroundColor Yellow
-        Write-Host '  Setting it up again.' -ForegroundColor Yellow
-        $cfg.deviceToken = ''
-        $cfg.connectorId = ''
-        $cfg.orgName     = ''
-        $cfg.licenceId   = ''
-        Save-Config $cfg
+        if ("$_" -match 'not paired|sign in again|Unauthenticated|\b401\b') {
+          Write-Host '  This computer needs to be linked again.' -ForegroundColor Yellow
+          $cfg.deviceToken = ''
+          $cfg.connectorId = ''
+          $cfg.orgName     = ''
+          $cfg.licenceId   = ''
+          Save-Config $cfg
+        } else {
+          # Could not reach the server to check - keep the pairing and carry on.
+          Write-Log "pairing check inconclusive, keeping it: $_"
+        }
       }
     }
 
