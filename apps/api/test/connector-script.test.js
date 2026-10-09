@@ -496,3 +496,18 @@ test('everything can live in one already-allowed folder', () => {
                             src.indexOf('function Get-WatchLauncher'));
   assert.match(install, /DataHome/, 'the watcher is not told which home to use');
 });
+
+test('Tally UDF fields do not break the whole sync', () => {
+  /*
+   * Tally exports User Defined Fields as <UDF:_UDF_1234> with the prefix never
+   * declared. A strict parser stops the entire document with "'UDF' is an
+   * undeclared prefix", losing a book that is otherwise fine - which is exactly
+   * what one real company's vouchers did. The parse must turn namespaces off.
+   */
+  assert.match(src, /function ConvertFrom-TallyXml/, 'no namespace-tolerant parser');
+  assert.match(src, /\$reader\.Namespaces = \$false/, 'namespaces are still processed');
+  // And the hot path must actually use it, not the strict cast.
+  assert.match(src, /return \(ConvertFrom-TallyXml \$clean\)/);
+  const invoke = src.slice(src.indexOf('function Invoke-Tally'), src.indexOf('function Invoke-Tally') + 600);
+  assert.ok(!/return \[xml\]\$clean/.test(invoke), 'Invoke-Tally still uses the strict [xml] cast');
+});

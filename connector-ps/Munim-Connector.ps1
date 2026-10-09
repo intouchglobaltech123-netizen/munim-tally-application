@@ -292,12 +292,43 @@ function Repair-TallyXml([string]$xml) {
   return $xml
 }
 
+<#
+  Parse Tally's XML without choking on its namespace prefixes.
+
+  Tally exports User Defined Fields as elements like <UDF:_UDF_788582169.LIST>.
+  The prefix "UDF:" is never declared, and a strict parser - which is what
+  [xml]$text is - stops the whole document dead with "'UDF' is an undeclared
+  prefix", losing a book that is otherwise perfectly readable. One real company
+  with UDFs in its vouchers was enough to break the entire sync.
+
+  Tally does not mean anything by the namespace; it is just how it names a custom
+  field. So we turn namespace processing off and the colon becomes an ordinary
+  part of the element name. Every tag the connector actually reads - ENVELOPE,
+  VOUCHER, LEDGER and the rest - has no prefix and is unaffected.
+#>
+function ConvertFrom-TallyXml([string]$text) {
+  $doc = New-Object System.Xml.XmlDocument
+  $sr = New-Object System.IO.StringReader($text)
+  $reader = New-Object System.Xml.XmlTextReader($sr)
+  $reader.Namespaces = $false
+  # No document this reads has a DTD, and resolving one would be a needless
+  # network/file reach - refuse it.
+  try { $reader.XmlResolver = $null } catch { }
+  try {
+    $doc.Load($reader)
+  } finally {
+    $reader.Close()
+    $sr.Dispose()
+  }
+  return $doc
+}
+
 function Invoke-Tally($cfg, [string]$body, [int]$TimeoutSec = 300) {
   $res = Invoke-WebRequest -Uri $cfg.tallyUrl -Method Post -Body $body `
            -ContentType 'text/xml;charset=utf-8' -TimeoutSec $TimeoutSec -UseBasicParsing
   $clean = Repair-TallyXml $res.Content
   try {
-    return [xml]$clean
+    return (ConvertFrom-TallyXml $clean)
   } catch {
     throw "Tally sent a response this connector could not read: $($_.Exception.Message)"
   }
